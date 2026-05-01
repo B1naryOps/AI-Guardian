@@ -569,8 +569,19 @@ export const AdminDashboard: React.FC = () => {
             <Settings size={18} /> <span className="hidden sm:inline">Personnaliser</span>
           </button>
           <button onClick={() => setShowResetConfirm(true)} className="p-3 bg-white dark:bg-slate-800 border border-red-200 rounded-2xl text-red-500 hover:bg-red-50 transition-colors"><History size={20} /></button>
-          <button onClick={() => setCompanyInfo({ ...companyInfo, isConfigured: false })} className="p-3 bg-white dark:bg-slate-800 border border-slate-200 rounded-2xl text-slate-400 hover:bg-slate-50 transition-colors"><Settings size={20} /></button>
-          <button onClick={() => handleLaunchCampaign()} disabled={isLaunching} className="hidden lg:flex items-center gap-2 px-6 py-3 bg-brand-600 text-white rounded-2xl font-bold disabled:opacity-50 hover:bg-brand-700 transition-colors"><Zap size={18} fill="currentColor" />{isLaunching ? 'Lancement...' : 'Simulation'}</button>
+          
+          {/* BOUTON SYNC ORANGE - TRÈS VISIBLE */}
+          <button 
+            onClick={handleSyncGophish} 
+            disabled={isLaunching} 
+            className="flex items-center gap-2 px-4 py-3 bg-orange-500 text-white rounded-2xl font-bold hover:bg-orange-600 transition-colors shadow-lg shadow-orange-200"
+            title="Synchroniser les clics depuis Gophish"
+          >
+            <RefreshCw size={18} className={isLaunching ? 'animate-spin' : ''} />
+            <span className="hidden xl:inline">{isLaunching ? 'Sync...' : 'Actualiser Stats'}</span>
+          </button>
+
+          <button onClick={() => handleLaunchCampaign()} disabled={isLaunching} className="hidden lg:flex items-center gap-2 px-6 py-3 bg-brand-600 text-white rounded-2xl font-bold disabled:opacity-50 hover:bg-brand-700 transition-colors shadow-lg shadow-brand-200"><Zap size={18} fill="currentColor" />{isLaunching ? 'Lancement...' : 'Simulation'}</button>
         </div>
       </div>
 
