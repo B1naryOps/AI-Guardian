@@ -1,5 +1,6 @@
 import asyncio
 import os
+from datetime import datetime
 from gophish import Gophish
 from gophish.models import Campaign, Template, Group, User as GophishUser, SMTP
 from app.models.simulation import Simulation
