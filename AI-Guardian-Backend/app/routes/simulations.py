@@ -56,8 +56,16 @@ async def create_simulation(sim: SimulationCreate, background_tasks: BackgroundT
     
     db_sim.total_targets = len(targets_list)
     
-    # Préparer les cibles pour Gophish AVANT le commit pour éviter l'expiration des objets SQLAlchemy
-    g_targets = [{"first_name": u.prenoms, "last_name": u.nom, "email": u.email} for u in users]
+    # 3. Préparer TOUTES les données nécessaires avant le commit
+    # On extrait tout dans des listes simples car les objets 'user' et 'target' expirent après le commit
+    simulation_targets_data = []
+    for user, target in zip(users, targets_list):
+        simulation_targets_data.append({
+            "email": user.email,
+            "first_name": user.prenoms,
+            "last_name": user.nom,
+            "target_id": target.id
+        })
     
     await db.commit()
     await db.refresh(db_sim)
@@ -65,17 +73,18 @@ async def create_simulation(sim: SimulationCreate, background_tasks: BackgroundT
     # 4. Déclencher la campagne réelle (Gophish ou Email)
     if sim.channel == "email":
         from app.core.communications import create_gophish_campaign
+        g_targets = [{"first_name": t['first_name'], "last_name": t['last_name'], "email": t['email']} for t in simulation_targets_data]
         create_gophish_campaign(db_sim.name, g_targets, db_sim.template or "Default")
     
-    # On garde le loop pour les logs internes et le tracking (en passant des types simples)
-    for user, target in zip(users, targets_list):
+    # On lance les tâches de fond avec les données extraites
+    for target_data in simulation_targets_data:
         background_tasks.add_task(
             send_simulation_message, 
-            email=user.email,
+            email=target_data["email"],
             simulation_name=db_sim.name,
             channel=db_sim.channel,
             text=db_sim.text or "",
-            target_id=target.id
+            target_id=target_data["target_id"]
         )
 
     return db_sim
