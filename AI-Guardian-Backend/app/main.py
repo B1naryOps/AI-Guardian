@@ -30,16 +30,20 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="AI Guardian", lifespan=lifespan)
 
-# Allows the React dev server and any local network access
-origins = ["*"]
+from fastapi.responses import Response
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+@app.middleware("http")
+async def custom_cors_middleware(request, call_next):
+    if request.method == "OPTIONS":
+        return Response(status_code=200, headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "*",
+            "Access-Control-Allow-Headers": "*"
+        })
+    response = await call_next(request)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
+
 
 FAVICON_PATH = os.path.join("app", "favicon.png")
 
