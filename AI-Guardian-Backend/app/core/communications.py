@@ -5,6 +5,10 @@ from gophish.models import Campaign, Template, Group, User as GophishUser, SMTP
 from app.models.simulation import Simulation
 from app.models.simulation_target import SimulationTarget
 from app.models.user import User
+from dotenv import load_dotenv
+
+# Charger les variables d'environnement depuis le fichier .env
+load_dotenv()
 
 # Configuration Gophish (à définir dans le .env)
 GOPHISH_API_KEY = os.getenv("GOPHISH_API_KEY", "")
