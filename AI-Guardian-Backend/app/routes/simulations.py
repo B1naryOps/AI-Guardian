@@ -149,11 +149,18 @@ async def track_click(target_id: int, background_tasks: BackgroundTasks, db: Asy
 @router.get("/{id}/stats", response_model=List[SimulationTargetResponse])
 async def get_simulation_targets(id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(SimulationTarget)
+        select(SimulationTarget, User.prenoms, User.nom)
+        .join(User, SimulationTarget.user_id == User.id)
         .where(SimulationTarget.simulation_id == id)
         .order_by(SimulationTarget.created_at.desc())
     )
-    return result.scalars().all()
+    targets = []
+    for row in result.all():
+        target, prenoms, nom = row
+        target_dict = SimulationTargetResponse.model_validate(target)
+        target_dict.user_name = f"{prenoms} {nom}"
+        targets.append(target_dict)
+    return targets
 
 @router.delete("/{id}")
 async def delete_simulation(id: int, db: AsyncSession = Depends(get_db)):

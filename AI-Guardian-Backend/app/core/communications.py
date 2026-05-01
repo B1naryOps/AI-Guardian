@@ -122,15 +122,26 @@ async def sync_gophish_results(db):
                     user = user_res.scalar_one_or_none()
                     
                     if user:
-                        # Update SimulationTarget (has_clicked = True)
-                        await db.execute(
-                            update(SimulationTarget)
+                        # 1. Update SimulationTarget (has_clicked = True)
+                        target_res = await db.execute(
+                            select(SimulationTarget)
                             .where(SimulationTarget.user_id == user.id)
                             .where(SimulationTarget.has_clicked == False)
-                            .values(has_clicked=True, clicked_at=datetime.utcnow())
                         )
+                        target = target_res.scalar_one_or_none()
+
+                        if target:
+                            target.has_clicked = True
+                            target.clicked_at = datetime.utcnow()
+                            
+                            # 2. Update Global Simulation Counter
+                            await db.execute(
+                                update(Simulation)
+                                .where(Simulation.id == target.simulation_id)
+                                .values(total_clicks=Simulation.total_clicks + 1)
+                            )
                         
-                        # Baisser le score du département (Malus de vigilance)
+                        # 3. Baisser le score du département (Malus de vigilance)
                         if user.department_id:
                             dept_res = await db.execute(select(Department).where(Department.id == user.department_id))
                             dept = dept_res.scalar_one_or_none()

@@ -170,15 +170,19 @@ export const SimulationResultsModal: React.FC<SimulationResultsModalProps> = ({ 
                                 <p className="text-sm font-bold text-slate-400">Personne n'a cliqué. Bravo !</p>
                             </div>
                         ) : (
-                            stats.filter(s => s.has_clicked).map((s, i) => (
+                            stats.filter(s => s.has_clicked).map((target, i) => (
                                 <div key={i} className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 bg-red-100 dark:bg-red-900/40 text-red-600 rounded-xl flex items-center justify-center font-black">
-                                            {s.user_id}
+                                        <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center font-bold">
+                                            {target.user_name ? target.user_name.charAt(0) : target.user_id}
                                         </div>
                                         <div>
-                                            <p className="text-sm font-bold text-slate-900 dark:text-white">ID Utilisateur : {s.user_id}</p>
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">A cliqué à {new Date(s.clicked_at).toLocaleTimeString()}</p>
+                                            <div className="font-bold text-slate-900 dark:text-white">
+                                              {target.user_name || `Utilisateur #${target.user_id}`}
+                                            </div>
+                                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                              {target.clicked_at ? `A cliqué à ${new Date(target.clicked_at).toLocaleTimeString()}` : 'A cliqué'}
+                                            </div>
                                         </div>
                                     </div>
                                     <AlertTriangle className="text-red-500" size={18} />

@@ -21,6 +21,7 @@ class SimulationTargetResponse(BaseModel):
 
     id: int
     user_id: int
+    user_name: Optional[str] = None
     has_opened: bool
     has_clicked: bool
     has_reported: bool
