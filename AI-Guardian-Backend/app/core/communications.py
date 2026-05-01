@@ -55,6 +55,7 @@ def create_gophish_campaign(simulation_name: str, targets: list, template_name: 
         return None
 
     try:
+        from gophish.models import Page
         # 1. Créer le groupe de cibles
         g_targets = [GophishUser(first_name=t['first_name'], last_name=t['last_name'], email=t['email']) for t in targets]
         # On ajoute un timestamp pour éviter les collisions de noms de groupes
@@ -75,12 +76,20 @@ def create_gophish_campaign(simulation_name: str, targets: list, template_name: 
             return None
         t_name = templates[0].name
 
-        # 4. Créer et lancer la campagne
+        # 4. Vérifier les Landing Pages
+        pages = api.pages.get()
+        if not pages:
+            print("[GOPHISH] ERREUR : Aucune 'Landing Page' trouvée. Créez-en une dans Gophish !")
+            return None
+        p_name = pages[0].name
+
+        # 5. Créer et lancer la campagne
         campaign = api.campaigns.post(Campaign(
             name=f"{simulation_name}_{int(time.time())}",
             groups=[Group(name=group.name)],
             template=Template(name=t_name),
             smtp=SMTP(name=smtp_name),
+            page=Page(name=p_name),
             url="http://192.168.111.128:8000",
         ))
         print(f"[GOPHISH] Campagne '{campaign.name}' lancée avec succès.")
