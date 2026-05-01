@@ -1,0 +1,69 @@
+from typing import List
+from fastapi import APIRouter, Depends, HTTPException
+from app.core.dependencies import get_current_user
+from app.core.roles import require_admin
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from app.database import get_db
+from app.models.user import User
+from app.schemas.user import UserCreate, UserResponse
+from app.core.security import hash_password
+
+
+router = APIRouter(prefix="/users", tags=["Users"])
+
+
+@router.post("/", response_model=UserResponse)
+async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).where(User.email == user.email))
+    existing_user = result.scalars().first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email déjà utilisé")
+
+    # Recherche du département via invite_code
+    assigned_dept_id = user.department_id
+    if user.invite_code:
+        from app.models.department import Department
+        dept_result = await db.execute(select(Department).where(Department.invite_code == user.invite_code))
+        dept = dept_result.scalars().first()
+        if not dept:
+            raise HTTPException(status_code=404, detail="Code d'invitation invalide")
+        assigned_dept_id = dept.id
+
+    hashed_password = hash_password(user.mot_de_passe)
+    new_user = User(
+        email=user.email,
+        nom=user.nom,
+        prenoms=user.prenoms,
+        mot_de_passe=hashed_password,
+        role=user.role,
+        department_id=assigned_dept_id
+    )
+
+    db.add(new_user)
+    
+    from sqlalchemy.exc import IntegrityError
+    try:
+        await db.commit()
+        await db.refresh(new_user)
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(status_code=400, detail="Email déjà utilisé")
+
+    return new_user
+
+
+@router.get("/", response_model=List[UserResponse])
+async def list_users(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User))
+    return result.scalars().all()
+
+
+@router.get("/me", response_model=UserResponse)
+async def read_me(current_user: User = Depends(get_current_user)):
+    return current_user
+
+
+@router.get("/admin/dashboard")
+async def admin_dashboard(admin = Depends(require_admin)):
+    return {"message": "Bienvenue admin"}

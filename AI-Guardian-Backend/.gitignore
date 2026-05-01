@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+
+# Environnement virtuel
+venv/
+env/
+
+# Environnements IDE
+.vscode/
+.idea/
+
+# Configuration locale
+.env
+
+# Logs
+*.log
+
+# Base de données (PostgreSQL ou SQLite)
+*.db

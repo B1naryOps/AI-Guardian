@@ -1,0 +1,5 @@
+{
+  "name": "AI Guardian",
+  "description": "Assistant intelligent de détection de phishing avec simulation de campagnes Gophish.",
+  "requestFramePermissions": []
+}
