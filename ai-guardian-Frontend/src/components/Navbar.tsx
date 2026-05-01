@@ -41,7 +41,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate, onLogou
           onClick={() => onNavigate(isAuthenticated ? 'dashboard' : 'landing')}
         >
           <div className="w-10 h-10 bg-brand-600 text-white rounded-xl flex items-center justify-center group-hover:rotate-12 transition-all shadow-lg shadow-brand-200/50 overflow-hidden">
-            <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
           </div>
           <div className="flex flex-col">
             <span className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tighter leading-none">AI Guardian</span>
