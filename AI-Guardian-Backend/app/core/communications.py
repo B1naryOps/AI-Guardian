@@ -162,7 +162,22 @@ async def sync_gophish_results(db):
                             .where(SimulationTarget.user_id == user.id)
                             .values(has_opened=True)
                         )
+            
+            # Après avoir traité tous les évènements d'une campagne, on recalcule le total réel
+            # Cela corrige les compteurs si des clics ont été synchronisés partiellement
+            from sqlalchemy import func
+            sim_res = await db.execute(select(Simulation).where(Simulation.name.like(f"%{camp.name}%")))
+            sim = sim_res.scalar_one_or_none()
+            if sim:
+                count_res = await db.execute(
+                    select(func.count(SimulationTarget.id))
+                    .where(SimulationTarget.simulation_id == sim.id)
+                    .where(SimulationTarget.has_clicked == True)
+                )
+                real_clicks = count_res.scalar()
+                sim.total_clicks = real_clicks
+
         await db.commit()
-        print("[GOPHISH SYNC] Synchronisation terminée avec succès.")
+        print("[GOPHISH SYNC] Synchronisation et recalcul terminés avec succès.")
     except Exception as e:
         print(f"[GOPHISH SYNC ERROR] {e}")
