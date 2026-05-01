@@ -67,9 +67,16 @@ async def create_simulation(sim: SimulationCreate, background_tasks: BackgroundT
         from app.core.communications import create_gophish_campaign
         create_gophish_campaign(db_sim.name, g_targets, db_sim.template or "Default")
     
-    # On garde le loop pour les logs internes et le tracking
+    # On garde le loop pour les logs internes et le tracking (en passant des types simples)
     for user, target in zip(users, targets_list):
-        background_tasks.add_task(send_simulation_message, db_sim, target, user)
+        background_tasks.add_task(
+            send_simulation_message, 
+            email=user.email,
+            simulation_name=db_sim.name,
+            channel=db_sim.channel,
+            text=db_sim.text or "",
+            target_id=target.id
+        )
 
     return db_sim
 

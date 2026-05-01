@@ -16,26 +16,24 @@ def get_gophish_client():
     # Disable SSL verify if using self-signed certs (common with Gophish out of the box)
     return Gophish(GOPHISH_API_KEY, host=GOPHISH_URL, verify=False)
 
-async def send_simulation_message(simulation: Simulation, target: SimulationTarget, user: User):
+async def send_simulation_message(email: str, simulation_name: str, channel: str, text: str = "", target_id: int = None):
     """
-    Cette fonction est appelée pour chaque cible. 
-    Pour Gophish, on va plutôt gérer la création globale dans la route,
-    mais on garde cette fonction pour le logging et le fallback SMS.
+    Cette fonction est appelée en arrière-plan. On utilise des types simples 
+    pour éviter les erreurs de session SQLAlchemy (MissingGreenlet).
     """
     api = get_gophish_client()
     
     if not api:
-        print(f"[DEBUG] Gophish non configuré. Simulation d'envoi pour {user.email}")
+        print(f"[DEBUG] Gophish non configuré. Simulation d'envoi pour {email}")
         return
 
-    # Si c'est du SMS, Gophish ne gère pas, on reste en mock ou on utilise Twilio
-    if simulation.channel == "sms":
-        print(f"[SMS] Envoi simulé à {user.email} : {simulation.text}")
+    # Si c'est du SMS
+    if channel == "sms":
+        print(f"[SMS] Envoi simulé à {email} : {text}")
         return
 
-    # Pour l'email via Gophish, la campagne est lancée globalement.
-    # On log simplement que l'utilisateur fait partie de la simulation.
-    print(f"[GOPHISH] Utilisateur {user.email} prêt pour la campagne '{simulation.name}'")
+    # Pour l'email via Gophish
+    print(f"[GOPHISH] Campagne en cours pour {email}")
 
 import time
 
