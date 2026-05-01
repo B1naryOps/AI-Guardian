@@ -272,9 +272,15 @@ export const AdminDashboard: React.FC = () => {
       }
     }
     if (!loadingDepts) {
-      fetchUsers();
+      fetchUsers().then(() => {
+        // Une fois les utilisateurs chargés, on met à jour le staffCount réel des départements
+        setDepartments(prevDepts => prevDepts.map(dept => {
+          const actualCount = staff.filter(s => s.department === dept.name).length;
+          return { ...dept, staffCount: actualCount || dept.staffCount };
+        }));
+      });
     }
-  }, [departments, loadingDepts]);
+  }, [departments.length, loadingDepts]); // On surveille le nombre de départements
 
   const handleResetData = async () => {
     try {
@@ -310,7 +316,7 @@ export const AdminDashboard: React.FC = () => {
             try {
               await departmentService.create({
                 name,
-                staff_count: Math.floor(Math.random() * 50) + 10,
+                staff_count: 0,
                 description: `Département ${name}`,
                 priority: 'normal'
               });
@@ -404,7 +410,7 @@ export const AdminDashboard: React.FC = () => {
     try {
       const added = await departmentService.create({
         name: newDept.name.trim(),
-        staff_count: newDept.staffCount || 0,
+        staff_count: 0,
         description: newDept.description.trim(),
         priority: newDept.priority
       });
@@ -412,7 +418,7 @@ export const AdminDashboard: React.FC = () => {
       setDepartments([...departments, {
         id: String(added.id),
         name: added.name,
-        staffCount: added.staff_count,
+        staffCount: 0,
         avgVigilance: added.avg_vigilance,
         priority: added.priority as any,
         points: 0,
@@ -530,7 +536,14 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <ReportExportButton departments={departments} globalVigilance={74.5} />
+          <ReportExportButton 
+            departments={departments} 
+            globalVigilance={
+              departments.length > 0 
+                ? Number((departments.reduce((acc, d) => acc + (d.avgVigilance || 0), 0) / departments.length).toFixed(1))
+                : 100
+            } 
+          />
           <button onClick={() => setShowCompanySettings(true)} className="px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-brand-600 font-bold flex items-center gap-2 hover:border-brand-500 transition-colors">
             <Settings size={18} /> <span className="hidden sm:inline">Personnaliser</span>
           </button>
@@ -592,7 +605,10 @@ export const AdminDashboard: React.FC = () => {
                 <p className="text-slate-400 font-bold">Aucune équipe définie.</p>
               </div>
             ) : (
-              departments.map(dept => <DepartmentCard key={dept.id} dept={dept} onDelete={handleDeleteDepartment} onLaunch={handleLaunchCampaign} />)
+              departments.map(dept => {
+                const actualCount = staff.filter(s => s.department === dept.name).length;
+                return <DepartmentCard key={dept.id} dept={{...dept, staffCount: actualCount}} onDelete={handleDeleteDepartment} onLaunch={handleLaunchCampaign} />;
+              })
             )}
           </div>
         </div>

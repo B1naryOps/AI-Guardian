@@ -59,7 +59,13 @@ async def create_simulation(sim: SimulationCreate, background_tasks: BackgroundT
     await db.commit()
     await db.refresh(db_sim)
 
-    # 4. Simuler l'envoi des messages
+    # 4. Déclencher la campagne réelle (Gophish ou Email)
+    if sim.channel == "email":
+        from app.core.communications import create_gophish_campaign
+        g_targets = [{"first_name": u.prenoms, "last_name": u.nom, "email": u.email} for u in users]
+        create_gophish_campaign(db_sim.name, g_targets, db_sim.template or "Default")
+    
+    # On garde le loop pour les logs internes et le tracking
     for user, target in zip(users, targets_list):
         background_tasks.add_task(send_simulation_message, db_sim, target, user)
 

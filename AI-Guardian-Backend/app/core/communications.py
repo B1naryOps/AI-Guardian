@@ -18,32 +18,56 @@ def get_gophish_client():
 
 async def send_simulation_message(simulation: Simulation, target: SimulationTarget, user: User):
     """
-    Simule l'envoi d'un message via email en utilisant Gophish.
-    S'il n'y a pas de clé API, on fait un fallback sur les logs de debug.
+    Cette fonction est appelée pour chaque cible. 
+    Pour Gophish, on va plutôt gérer la création globale dans la route,
+    mais on garde cette fonction pour le logging et le fallback SMS.
     """
-    tracking_link = f"http://localhost:8000/simulations/track/{target.id}"
-    
     api = get_gophish_client()
     
     if not api:
-        # Fallback de développement si Gophish n'est pas configuré
-        if simulation.channel == "sms":
-            print(f"[DEBUG - GOPHISH NON CONFIGURÉ] SMS à {user.email}: {simulation.text}")
-        else:
-            print(f"[DEBUG - GOPHISH NON CONFIGURÉ] Email à {user.email}: {simulation.name}")
-        await asyncio.sleep(0.1)
+        print(f"[DEBUG] Gophish non configuré. Simulation d'envoi pour {user.email}")
         return
 
+    # Si c'est du SMS, Gophish ne gère pas, on reste en mock ou on utilise Twilio
+    if simulation.channel == "sms":
+        print(f"[SMS] Envoi simulé à {user.email} : {simulation.text}")
+        return
+
+    # Pour l'email via Gophish, la campagne est lancée globalement.
+    # On log simplement que l'utilisateur fait partie de la simulation.
+    print(f"[GOPHISH] Utilisateur {user.email} prêt pour la campagne '{simulation.name}'")
+
+def create_gophish_campaign(simulation_name: str, targets: list, template_name: str):
+    """
+    Crée un groupe et une campagne dans Gophish.
+    """
+    api = get_gophish_client()
+    if not api:
+        return None
+
     try:
-        # Note: L'intégration "parfaite" avec Gophish nécessiterait de créer un Group, 
-        # une Page, un Template, un SMTP, puis une Campagne. 
-        # Pour une intégration légère, on pourrait appeler l'API Gophish ici pour inscrire l'utilisateur
-        # à une campagne existante, ou créer une campagne à la volée.
-        print(f"[GOPHISH] Tentative de connexion à l'API Gophish pour {user.email}...")
-        # Exemple de code pour créer un utilisateur dans un groupe (nécessite l'ID du groupe)
-        # api.groups.post(Group(name=f"Sim_{simulation.id}", targets=[GophishUser(first_name=user.prenoms, last_name=user.nom, email=user.email)]))
-        print(f"[GOPHISH] Connexion réussie, email en attente d'envoi par Gophish.")
-    except Exception as e:
-        print(f"[ERREUR GOPHISH] Impossible de contacter Gophish: {e}")
+        # 1. Créer le groupe de cibles
+        g_targets = [GophishUser(first_name=t['first_name'], last_name=t['last_name'], email=t['email']) for t in targets]
+        group = api.groups.post(Group(name=f"Group_{simulation_name}", targets=g_targets))
         
-    await asyncio.sleep(0.1)
+        # 2. On cherche un profil SMTP (Sending Profile) existant. 
+        # S'il n'y en a pas, la campagne sera créée mais restera en "Error" dans Gophish.
+        smtp_profiles = api.smtp.get()
+        smtp_name = smtp_profiles[0].name if smtp_profiles else "Default"
+
+        # 3. On cherche un Template
+        templates = api.templates.get()
+        t_name = templates[0].name if templates else "Default"
+
+        # 4. Créer et lancer la campagne
+        campaign = api.campaigns.post(Campaign(
+            name=simulation_name,
+            groups=[group],
+            template=Template(name=t_name),
+            smtp=SMTP(name=smtp_name),
+            url="http://192.168.111.128:8000", # L'URL de notre serveur pour le tracking
+        ))
+        return campaign
+    except Exception as e:
+        print(f"[ERREUR CREATE GOPHISH] {e}")
+        return None
