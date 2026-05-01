@@ -56,13 +56,15 @@ async def create_simulation(sim: SimulationCreate, background_tasks: BackgroundT
     
     db_sim.total_targets = len(targets_list)
     
+    # Préparer les cibles pour Gophish AVANT le commit pour éviter l'expiration des objets SQLAlchemy
+    g_targets = [{"first_name": u.prenoms, "last_name": u.nom, "email": u.email} for u in users]
+    
     await db.commit()
     await db.refresh(db_sim)
 
     # 4. Déclencher la campagne réelle (Gophish ou Email)
     if sim.channel == "email":
         from app.core.communications import create_gophish_campaign
-        g_targets = [{"first_name": u.prenoms, "last_name": u.nom, "email": u.email} for u in users]
         create_gophish_campaign(db_sim.name, g_targets, db_sim.template or "Default")
     
     # On garde le loop pour les logs internes et le tracking

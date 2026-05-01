@@ -37,37 +37,52 @@ async def send_simulation_message(simulation: Simulation, target: SimulationTarg
     # On log simplement que l'utilisateur fait partie de la simulation.
     print(f"[GOPHISH] Utilisateur {user.email} prêt pour la campagne '{simulation.name}'")
 
+import time
+
 def create_gophish_campaign(simulation_name: str, targets: list, template_name: str):
     """
-    Crée un groupe et une campagne dans Gophish.
+    Crée un groupe et une campagne dans Gophish avec vérifications de sécurité.
     """
     api = get_gophish_client()
     if not api:
+        print("[GOPHISH] API non configurée.")
+        return None
+
+    if not targets:
+        print("[GOPHISH] Aucune cible pour cette campagne. Annulation.")
         return None
 
     try:
         # 1. Créer le groupe de cibles
         g_targets = [GophishUser(first_name=t['first_name'], last_name=t['last_name'], email=t['email']) for t in targets]
-        group = api.groups.post(Group(name=f"Group_{simulation_name}", targets=g_targets))
+        # On ajoute un timestamp pour éviter les collisions de noms de groupes
+        group_name = f"Group_{simulation_name}_{int(time.time())}"
+        group = api.groups.post(Group(name=group_name, targets=g_targets))
         
-        # 2. On cherche un profil SMTP (Sending Profile) existant. 
-        # S'il n'y en a pas, la campagne sera créée mais restera en "Error" dans Gophish.
+        # 2. Vérifier les profils SMTP
         smtp_profiles = api.smtp.get()
-        smtp_name = smtp_profiles[0].name if smtp_profiles else "Default"
+        if not smtp_profiles:
+            print("[GOPHISH] ERREUR : Aucun 'Sending Profile' trouvé. Créez-en un dans Gophish !")
+            return None
+        smtp_name = smtp_profiles[0].name
 
-        # 3. On cherche un Template
+        # 3. Vérifier les Templates
         templates = api.templates.get()
-        t_name = templates[0].name if templates else "Default"
+        if not templates:
+            print("[GOPHISH] ERREUR : Aucun 'Email Template' trouvé. Créez-en un dans Gophish !")
+            return None
+        t_name = templates[0].name
 
         # 4. Créer et lancer la campagne
         campaign = api.campaigns.post(Campaign(
-            name=simulation_name,
-            groups=[group],
+            name=f"{simulation_name}_{int(time.time())}",
+            groups=[Group(name=group.name)],
             template=Template(name=t_name),
             smtp=SMTP(name=smtp_name),
-            url="http://192.168.111.128:8000", # L'URL de notre serveur pour le tracking
+            url="http://192.168.111.128:8000",
         ))
+        print(f"[GOPHISH] Campagne '{campaign.name}' lancée avec succès.")
         return campaign
     except Exception as e:
-        print(f"[ERREUR CREATE GOPHISH] {e}")
+        print(f"[ERREUR GOPHISH DETAIL] {e}")
         return None
