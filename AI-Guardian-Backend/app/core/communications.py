@@ -90,7 +90,7 @@ def create_gophish_campaign(simulation_name: str, targets: list, template_name: 
             template=Template(name=t_name),
             smtp=SMTP(name=smtp_name),
             page=Page(name=p_name),
-            url="http://192.168.111.128:8000",
+            url="http://192.168.111.128:8080",
         ))
         print(f"[GOPHISH] Campagne '{campaign.name}' lancée avec succès.")
         return campaign
