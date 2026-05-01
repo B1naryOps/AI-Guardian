@@ -30,14 +30,13 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="AI Guardian", lifespan=lifespan)
 
-# ─── CORS ─────────────────────────────────────────────────────────────────────
-# Allows the React dev server (port 5173) and any production domain.
-# Adjust origins in production to restrict access.
-origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
+# Allows the React dev server and any local network access
+origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000,http://192.168.111.1:5173,http://127.0.0.1:5173").split(",")
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=r"^https?://(?:localhost|127\.0\.0\.1|192\.168\.\d+\.\d+)(?::\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
