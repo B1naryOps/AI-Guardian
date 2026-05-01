@@ -83,9 +83,9 @@ export const CompanySettingsModal: React.FC<CompanySettingsModalProps> = ({
                 <div className="flex gap-6 items-center">
                   <div className="w-24 h-24 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden shrink-0 p-2">
                     {logoUrl ? (
-                      <img src={logoUrl} alt="Logo" className="max-w-full max-h-full object-contain" onError={(e) => (e.currentTarget.src = '/logo.png')} />
+                      <img src={logoUrl} alt="Logo de l'entreprise" className="max-w-full max-h-full object-contain" onError={(e) => (e.currentTarget.src = '/logo.png?v=2')} />
                     ) : (
-                      <img src="/logo.png" alt="Default Logo" className="w-full h-full object-cover rounded-xl" />
+                      <img src="/logo.png?v=2" alt="Logo par défaut" className="w-full h-full object-cover" />
                     )}
                   </div>
                   <div className="flex-1">

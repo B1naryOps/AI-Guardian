@@ -325,7 +325,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onLogin, onDo
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-brand-600 text-white rounded-lg flex items-center justify-center overflow-hidden">
                 <img 
-                  src="./logo.png" 
+                  src="/logo.png?v=2" 
                   alt="Logo" 
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"

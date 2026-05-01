@@ -133,7 +133,7 @@ export const AuthPage: React.FC = () => {
         <div className="bg-white dark:bg-slate-900 p-10 md:p-12 rounded-[40px] shadow-2xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800">
           <div className="text-center mb-10">
             <div className="w-20 h-20 bg-brand-600 text-white rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-brand-200 rotate-3 overflow-hidden">
-              <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              <img src="/logo.png?v=2" alt="Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
             </div>
             <h2 className="text-4xl font-extrabold text-slate-900 dark:text-white mb-3">
               {mode === 'login' ? 'Bon retour !' : 'Créer un compte'}

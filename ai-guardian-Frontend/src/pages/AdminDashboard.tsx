@@ -250,15 +250,20 @@ export const AdminDashboard: React.FC = () => {
             deptName = 'Informatique';
           }
           
+          const vScore = Math.floor(Math.random() * 50) + 50;
+          let userStatus: 'active' | 'warning' | 'critical' = 'active';
+          if (vScore < 60) userStatus = 'critical';
+          else if (vScore < 75) userStatus = 'warning';
+
           return {
             id: String(u.id),
             firstName: u.prenoms,
             lastName: u.nom,
             email: u.email,
             department: deptName,
-            vigilanceScore: Math.floor(Math.random() * 50) + 50,
+            vigilanceScore: vScore,
             lastTest: new Date().toISOString().split('T')[0],
-            status: 'active'
+            status: userStatus
           };
         });
         setStaff(mappedUsers);
@@ -516,7 +521,7 @@ export const AdminDashboard: React.FC = () => {
             {companyInfo.logo_url ? (
               <img src={companyInfo.logo_url} alt="Logo" className="max-w-full max-h-full object-contain" onError={(e) => (e.currentTarget.src = '/logo.png')} />
             ) : (
-              <img src="/logo.png" alt="Logo" className="w-full h-full object-cover rounded-xl" />
+              <img src="/logo.png?v=2" alt="Logo" className="w-full h-full object-cover rounded-xl" />
             )}
           </div>
           <div>
@@ -540,8 +545,12 @@ export const AdminDashboard: React.FC = () => {
       <AdminStatsCards
         deptCount={departments.length}
         staffCount={staff.length}
-        avgScore="74.5%"
-        alertCount="12"
+        avgScore={
+          departments.length > 0
+            ? (departments.reduce((acc, d) => acc + (d.avgVigilance || 0), 0) / departments.length).toFixed(1) + '%'
+            : '0%'
+        }
+        alertCount={String(staff.filter(s => s.status === 'critical').length)}
         onShowDepts={() => setShowDeptDetails(true)}
         onShowStaff={() => setShowStaffList(true)}
         onShowAlerts={() => setShowCriticalAlerts(true)}
