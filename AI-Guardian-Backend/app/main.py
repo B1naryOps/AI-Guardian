@@ -30,19 +30,20 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="AI Guardian", lifespan=lifespan)
 
-from fastapi.responses import Response
+# Configuration CORS sécurisée pour la production
+origins = [
+    "http://192.168.111.128",
+    "http://192.168.111.128:5173",
+    "http://localhost:5173"
+]
 
-@app.middleware("http")
-async def custom_cors_middleware(request, call_next):
-    if request.method == "OPTIONS":
-        return Response(status_code=200, headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "*",
-            "Access-Control-Allow-Headers": "*"
-        })
-    response = await call_next(request)
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    return response
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 FAVICON_PATH = os.path.join("app", "favicon.png")

@@ -1,0 +1,21 @@
+[Unit]
+Description=AI Guardian Backend - FastAPI Application
+After=network.target
+
+[Service]
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/AI-Guardian/AI-Guardian-Backend
+Environment="PATH=/opt/AI-Guardian/AI-Guardian-Backend/venv/bin"
+# Ajoutez d'autres variables d'environnement si nécessaire (ex: DATABASE_URL, GOPHISH_API_KEY)
+# Environment="GOPHISH_API_KEY=votre_cle_api"
+# Environment="GOPHISH_URL=https://localhost:3333"
+
+ExecStart=/opt/AI-Guardian/AI-Guardian-Backend/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+# Redémarrer automatiquement si le processus plante
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
