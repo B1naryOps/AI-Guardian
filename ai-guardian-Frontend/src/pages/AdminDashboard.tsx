@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import {
-  Settings, Play, Zap, History, Plus, BarChart3, Trash2, Mail, Smartphone
+  Settings, Play, Zap, History, Plus, BarChart3, Trash2, Mail, Smartphone, RefreshCw
 } from 'lucide-react';
 import { userService, departmentService, simulationService, settingsService } from '../services/api';
 
@@ -519,6 +519,24 @@ export const AdminDashboard: React.FC = () => {
     setShowResultsModal(true);
   };
 
+  const handleSyncGophish = async () => {
+    setIsLaunching(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/simulations/sync`);
+      if (response.ok) {
+        await fetchDepts();
+        await fetchUsers();
+        await fetchSimulations();
+        setNotification({ message: "Synchronisation Gophish terminée !", type: 'success' });
+      }
+    } catch (err) {
+      setNotification({ message: "Erreur de synchronisation", type: 'error' });
+    } finally {
+      setIsLaunching(false);
+      setTimeout(() => setNotification(null), 3000);
+    }
+  };
+
   return (
     <div className="container mx-auto px-6 py-12 max-w-7xl">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12">
@@ -544,6 +562,9 @@ export const AdminDashboard: React.FC = () => {
                 : 100
             } 
           />
+          <button onClick={handleSyncGophish} disabled={isLaunching} className="p-3 bg-white dark:bg-slate-800 border border-slate-200 rounded-2xl text-slate-400 hover:bg-slate-50 transition-colors" title="Synchroniser Gophish">
+            <RefreshCw size={20} className={isLaunching ? 'animate-spin' : ''} />
+          </button>
           <button onClick={() => setShowCompanySettings(true)} className="px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-brand-600 font-bold flex items-center gap-2 hover:border-brand-500 transition-colors">
             <Settings size={18} /> <span className="hidden sm:inline">Personnaliser</span>
           </button>

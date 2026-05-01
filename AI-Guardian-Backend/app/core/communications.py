@@ -97,3 +97,54 @@ def create_gophish_campaign(simulation_name: str, targets: list, template_name: 
     except Exception as e:
         print(f"[ERREUR GOPHISH DETAIL] {e}")
         return None
+
+async def sync_gophish_results(db):
+    """
+    Récupère les clics depuis Gophish et met à jour AI-Guardian.
+    """
+    api = get_gophish_client()
+    if not api: return
+
+    try:
+        campaigns = api.campaigns.get()
+        from app.models.simulation_target import SimulationTarget
+        from app.models.department import Department
+        from app.models.user import User
+        from sqlalchemy import select, update
+
+        for camp in campaigns:
+            # On ne traite que les évènements de type "Clicked Link"
+            for event in camp.timeline:
+                if event.message == "Clicked Link":
+                    email = event.email
+                    
+                    # 1. Marquer la cible comme 'clicked' dans AI-Guardian
+                    # On cherche la cible par email de l'utilisateur
+                    user_res = await db.execute(select(User).where(User.email == email))
+                    user = user_res.scalar_one_or_none()
+                    
+                    if user:
+                        # Update SimulationTarget
+                        await db.execute(
+                            update(SimulationTarget)
+                            .where(SimulationTarget.user_id == user.id)
+                            .where(SimulationTarget.status == 'sent')
+                            .values(status='clicked')
+                        )
+                        
+                        # 2. Baisser le score du département (Malus de vigilance)
+                        if user.department_id:
+                            dept_res = await db.execute(select(Department).where(Department.id == user.department_id))
+                            dept = dept_res.scalar_one_or_none()
+                            if dept:
+                                # On baisse la vigilance (ex: -5% par clic)
+                                new_vigilance = max(0, (dept.avg_vigilance or 100) - 5)
+                                await db.execute(
+                                    update(Department)
+                                    .where(Department.id == dept.id)
+                                    .values(avg_vigilance=new_vigilance)
+                                )
+        await db.commit()
+        print("[GOPHISH SYNC] Synchronisation terminée.")
+    except Exception as e:
+        print(f"[GOPHISH SYNC ERROR] {e}")

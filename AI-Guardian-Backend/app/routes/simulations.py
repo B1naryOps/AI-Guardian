@@ -16,6 +16,15 @@ from app.core.communications import send_simulation_message
 
 router = APIRouter(prefix="/simulations", tags=["Simulations"])
 
+@router.get("/sync")
+async def sync_simulations(db: AsyncSession = Depends(get_db)):
+    """
+    Déclenche manuellement la synchronisation avec Gophish.
+    """
+    from app.core.communications import sync_gophish_results
+    await sync_gophish_results(db)
+    return {"message": "Synchronisation terminée"}
+
 @router.get("/", response_model=List[SimulationResponse])
 async def list_simulations(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Simulation).order_by(Simulation.created_at.desc()))
