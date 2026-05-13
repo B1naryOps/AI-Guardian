@@ -18,14 +18,20 @@ from app.routes.audit import router as audit_router
 from app.routes.settings import router as settings_router
 from app.routes.ws import router as ws_router
 from app.routes.remediation import router as remediation_router
+from app.routes.threats import router as threats_router
+from app.core.scanner import start_periodic_scanner
 from app.middleware.audit import AuditMiddleware
 # Modèles importés via app.models dans Alembic
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 import os
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Entraînement des modèles ML
     asyncio.create_task(asyncio.to_thread(check_and_train_models)) 
+    # Démarrage du bouclier de protection
+    asyncio.create_task(start_periodic_scanner(interval_seconds=60))
     yield
 
 app = FastAPI(title="AI Guardian", lifespan=lifespan)
@@ -48,10 +54,15 @@ app.add_middleware(
 
 FAVICON_PATH = os.path.join("app", "favicon.png")
 
+# Create static directory if it doesn't exist
+os.makedirs(os.path.join("app", "static"), exist_ok=True)
+app.mount("/static", StaticFiles(directory=os.path.join("app", "static")), name="static")
+
 app.include_router(users_router)
 app.include_router(auth_router)
 app.include_router(departments_router)
 app.include_router(simulations_router)
+app.include_router(threats_router)
 app.include_router(audit_router)
 app.include_router(settings_router)
 app.include_router(ws_router)

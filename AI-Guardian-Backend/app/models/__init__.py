@@ -6,3 +6,4 @@ from app.models.ml_analysis import MLAnalysis
 from app.models.simulation_target import SimulationTarget
 from app.models.company import CompanySettings
 from app.models.remediation import UserTrainingStatus
+from app.models.real_threat import RealThreat

@@ -12,6 +12,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Configuration Gophish (à définir dans le .env)
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 GOPHISH_API_KEY = os.getenv("GOPHISH_API_KEY", "")
 GOPHISH_URL = os.getenv("GOPHISH_URL", "https://localhost:3333")
 
@@ -150,6 +152,12 @@ async def sync_gophish_results(db):
                                 await db.execute(
                                     update(Department).where(Department.id == dept.id).values(avg_vigilance=new_vigilance)
                                 )
+                        
+                        # 4. Baisser le score de l'utilisateur
+                        new_user_vigilance = max(0, (user.vigilance_score or 100) - 10)
+                        await db.execute(
+                            update(User).where(User.id == user.id).values(vigilance_score=new_user_vigilance)
+                        )
 
                 # Évènement d'OUVERTURE
                 elif event.message == "Email Opened":

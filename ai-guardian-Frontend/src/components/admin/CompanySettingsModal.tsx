@@ -20,6 +20,7 @@ export const CompanySettingsModal: React.FC<CompanySettingsModalProps> = ({
   isOpen, onClose, companyInfo, onSave
 }) => {
   const [logoUrl, setLogoUrl] = useState(companyInfo?.logo_url || '');
+  const [uploading, setUploading] = useState(false);
   
   // Parse existing layout or use default
   let initialLayout = ['stats', 'passport', 'charts', 'threats'];
@@ -46,6 +47,29 @@ export const CompanySettingsModal: React.FC<CompanySettingsModalProps> = ({
     newLayout[index + 1] = newLayout[index];
     newLayout[index] = temp;
     setLayout(newLayout);
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setUploading(true);
+      const formData = new FormData();
+      formData.append('file', file);
+      try {
+        const response = await fetch('http://localhost:8000/settings/upload-logo', {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await response.json();
+        if (data.logo_url) {
+          setLogoUrl('http://localhost:8000' + data.logo_url);
+        }
+      } catch (err) {
+        console.error("Erreur d'upload du logo:", err);
+      } finally {
+        setUploading(false);
+      }
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -89,15 +113,15 @@ export const CompanySettingsModal: React.FC<CompanySettingsModalProps> = ({
                     )}
                   </div>
                   <div className="flex-1">
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">URL du logo</label>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Modifier le logo</label>
                     <input 
-                      type="url" 
-                      value={logoUrl}
-                      onChange={(e) => setLogoUrl(e.target.value)}
-                      className="w-full p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 font-bold dark:text-white transition-all"
-                      placeholder="https://mon-entreprise.com/logo.png"
+                      type="file" 
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      disabled={uploading}
+                      className="w-full p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 font-bold dark:text-white transition-all file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
                     />
-                    <p className="text-xs text-slate-500 mt-2 font-medium">Laissez vide pour utiliser le logo par défaut de AI Guardian.</p>
+                    <p className="text-xs text-slate-500 mt-2 font-medium">{uploading ? 'Téléchargement...' : 'Formats supportés : PNG, JPG, SVG.'}</p>
                   </div>
                 </div>
               </div>

@@ -102,6 +102,10 @@ export const simulationService = {
     const response = await apiClient.delete(`/simulations/${id}`);
     return response.data;
   },
+  async sync() {
+    const response = await apiClient.get('/simulations/sync');
+    return response.data;
+  },
 };
 
 // ─── Audit Logs ──────────────────────────────────────────────────────────────

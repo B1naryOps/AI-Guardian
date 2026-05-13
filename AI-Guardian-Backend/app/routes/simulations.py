@@ -25,6 +25,34 @@ async def sync_simulations(db: AsyncSession = Depends(get_db)):
     await sync_gophish_results(db)
     return {"message": "Synchronisation terminée"}
 
+from pydantic import BaseModel
+
+class ThreatTemplateRequest(BaseModel):
+    name: str
+    subject: str
+    html_content: str
+
+@router.post("/threat-template")
+async def create_threat_template(req: ThreatTemplateRequest):
+    """
+    Crée dynamiquement un template dans Gophish pour une menace.
+    """
+    from app.core.communications import get_gophish_client
+    api = get_gophish_client()
+    if not api:
+        # Gophish non configuré, on simule la création
+        return {"message": "Gophish non configuré, simulation de création réussie"}
+        
+    from gophish.models import Template
+    try:
+        template = Template(name=req.name, subject=req.subject, html=req.html_content)
+        api.templates.post(template)
+        return {"message": "Modèle créé avec succès dans Gophish"}
+    except Exception as e:
+        # Ignore errors if it already exists or other issues
+        print(f"[GOPHISH TEMPLATE ERROR] {e}")
+        return {"message": f"Erreur ou modèle déjà existant: {e}"}
+
 @router.get("/", response_model=List[SimulationResponse])
 async def list_simulations(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Simulation).order_by(Simulation.created_at.desc()))

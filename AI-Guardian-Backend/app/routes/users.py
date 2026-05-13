@@ -63,6 +63,26 @@ async def list_users(db: AsyncSession = Depends(get_db)):
 async def read_me(current_user: User = Depends(get_current_user)):
     return current_user
 
+from pydantic import BaseModel
+
+class UserUpdate(BaseModel):
+    nom: str | None = None
+    prenoms: str | None = None
+    mot_de_passe: str | None = None
+
+@router.patch("/me", response_model=UserResponse)
+async def update_me(user_update: UserUpdate, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if user_update.nom:
+        current_user.nom = user_update.nom
+    if user_update.prenoms:
+        current_user.prenoms = user_update.prenoms
+    if user_update.mot_de_passe:
+        current_user.mot_de_passe = hash_password(user_update.mot_de_passe)
+    
+    await db.commit()
+    await db.refresh(current_user)
+    return current_user
+
 
 @router.get("/admin/dashboard")
 async def admin_dashboard(admin = Depends(require_admin)):

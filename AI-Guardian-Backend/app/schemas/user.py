@@ -21,3 +21,4 @@ class UserResponse(BaseModel):
     department_id: Optional[int] = None
     xp: Optional[int] = 0
     level: Optional[str] = "Novice"
+    vigilance_score: Optional[float] = 100.0

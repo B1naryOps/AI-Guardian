@@ -12,35 +12,7 @@ export interface ThreatAlert {
   date: string;
 }
 
-const mockThreats: ThreatAlert[] = [
-  {
-    id: 't1',
-    title: 'Campagne Emotet détectée en Europe',
-    description: 'Vague de phishing massive ciblant les factures impayées.',
-    type: 'email',
-    severity: 'critical',
-    templateName: 'Facture Urgente',
-    date: 'Il y a 2h'
-  },
-  {
-    id: 't2',
-    title: 'Smishing : Faux colis',
-    description: 'Recrudescence des SMS frauduleux demandant des frais de livraison.',
-    type: 'sms',
-    severity: 'high',
-    templateName: 'Microsoft 365 Login', // Fallback as we don't have "Colis" template, let's use a generic one
-    date: 'Il y a 5h'
-  },
-  {
-    id: 't3',
-    title: 'Vulnérabilité RH exploitée',
-    description: 'Attaques d\'ingénierie sociale via de fausses demandes de mise à jour des fiches de paie.',
-    type: 'email',
-    severity: 'medium',
-    templateName: 'Mise à jour RH',
-    date: 'Hier'
-  }
-];
+// Mock threats removed as we now fetch from API
 
 interface ThreatIntelligenceWidgetProps {
   onSimulateThreat: (threat: ThreatAlert) => void;
@@ -50,8 +22,21 @@ export const ThreatIntelligenceWidget: React.FC<ThreatIntelligenceWidgetProps> =
   const [threats, setThreats] = useState<ThreatAlert[]>([]);
 
   useEffect(() => {
-    // Simuler un appel API
-    setThreats(mockThreats);
+    const fetchThreats = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/threats/intelligence');
+        if (response.ok) {
+          const data = await response.json();
+          setThreats(data);
+        }
+      } catch (err) {
+        console.error("Erreur de récupération des menaces", err);
+      }
+    };
+    
+    fetchThreats();
+    const interval = setInterval(fetchThreats, 60000);
+    return () => clearInterval(interval);
   }, []);
 
   const getSeverityColor = (severity: string) => {

@@ -21,37 +21,75 @@ export const Dashboard: React.FC = () => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
 
   useEffect(() => {
-    async function fetchHistory() {
+    const fetchHistory = async () => {
       try {
         const data = await analysisService.getHistory();
         setHistory(data.map((h: any) => ({
-           id: h.id,
-           content: h.content,
-           confidence: h.confidence,
-           is_phishing: h.is_phishing,
-           date: new Date(h.created_at).toLocaleString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-           rawDate: new Date(h.created_at)
+          id: h.id,
+          content: h.content,
+          confidence: h.confidence,
+          is_phishing: h.is_phishing,
+          date: new Date(h.created_at).toLocaleString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+          rawDate: new Date(h.created_at)
         })));
       } catch (err) {
         console.error("Erreur historique:", err);
       }
-    }
+    };
     fetchHistory();
+    const interval = setInterval(fetchHistory, 30000);
+    return () => clearInterval(interval);
   }, [token]);
 
   const [dbUser, setDbUser] = useState<any>(null);
 
   useEffect(() => {
-    async function fetchUser() {
+    const fetchUser = async () => {
       try {
         const u = await userService.getMe();
         setDbUser(u);
       } catch (err) {
         console.error("Erreur user:", err);
       }
-    }
+    };
     fetchUser();
+    const interval = setInterval(fetchUser, 30000);
+    return () => clearInterval(interval);
   }, [token]);
+
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileForm, setProfileForm] = useState({ nom: '', prenoms: '', mot_de_passe: '' });
+
+  const handleOpenProfile = () => {
+    setProfileForm({ nom: dbUser?.nom || '', prenoms: dbUser?.prenoms || '', mot_de_passe: '' });
+    setShowProfileModal(true);
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const payload: any = {};
+      if (profileForm.nom) payload.nom = profileForm.nom;
+      if (profileForm.prenoms) payload.prenoms = profileForm.prenoms;
+      if (profileForm.mot_de_passe) payload.mot_de_passe = profileForm.mot_de_passe;
+
+      const response = await fetch('http://localhost:8000/users/me', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+      if (response.ok) {
+        const updated = await response.json();
+        setDbUser(updated);
+        setShowProfileModal(false);
+      }
+    } catch (e) {
+      console.error("Error updating profile", e);
+    }
+  };
 
   const initials = user?.firstName && user?.lastName
     ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
@@ -68,14 +106,14 @@ export const Dashboard: React.FC = () => {
     const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
     const result: { name: string; dateStr: string; value: number }[] = [];
     const today = new Date();
-    
+
     for (let i = 6; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(today.getDate() - i);
-      result.push({ 
-        name: days[d.getDay()], 
-        dateStr: d.toDateString(), 
-        value: 0 
+      result.push({
+        name: days[d.getDay()],
+        dateStr: d.toDateString(),
+        value: 0
       });
     }
 
@@ -203,30 +241,36 @@ export const Dashboard: React.FC = () => {
   if (settings?.dashboard_layout) {
     try {
       layoutKeys = JSON.parse(settings.dashboard_layout);
-    } catch(e) {}
+    } catch (e) { }
   }
 
-  // Grouper charts et threats dans une grid si les deux se suivent
-  const renderedLayout = [];
-  for (let i = 0; i < layoutKeys.length; i++) {
-    const k = layoutKeys[i];
+  const renderedLayout = layoutKeys.map((k, i) => {
     if (k === 'charts' || k === 'threats') {
-      const nextK = layoutKeys[i+1];
+      const nextK = layoutKeys[i + 1];
+      const prevK = layoutKeys[i - 1];
+      
+      // Si adjacent à l'autre widget de graphique, on garde la grille
       if ((k === 'charts' && nextK === 'threats') || (k === 'threats' && nextK === 'charts')) {
-        renderedLayout.push(
+        return (
           <div key={`grid-${i}`} className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full">
             {k === 'charts' ? renderWidget('charts') : renderWidget('threats')}
             {k === 'charts' ? renderWidget('threats') : renderWidget('charts')}
           </div>
         );
-        i++; // Skip next
-      } else {
-        renderedLayout.push(renderWidget(k));
       }
-    } else {
-      renderedLayout.push(renderWidget(k));
+      
+      // Si on a déjà rendu ce widget dans le cadre d'un groupe, on l'ignore ici
+      if ((k === 'charts' && prevK === 'threats') || (k === 'threats' && prevK === 'charts')) {
+        return null;
+      }
     }
-  }
+    
+    return (
+      <div key={`layout-${k}-${i}`} className="w-full">
+        {renderWidget(k)}
+      </div>
+    );
+  });
 
   return (
     <div className="container mx-auto px-6 py-10 max-w-7xl">
@@ -255,11 +299,37 @@ export const Dashboard: React.FC = () => {
               Vigilance : {vigilanceScore}%
             </div>
           </div>
-          <div className="w-14 h-14 bg-brand-600 text-white rounded-2xl flex items-center justify-center font-black text-lg shadow-lg shadow-brand-200/50">
+          <div className="w-14 h-14 bg-brand-600 text-white rounded-2xl flex items-center justify-center font-black text-lg shadow-lg shadow-brand-200/50 cursor-pointer hover:bg-brand-700 transition" onClick={handleOpenProfile} title="Modifier le profil">
             {initials}
           </div>
         </div>
       </div>
+
+      {showProfileModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-md p-8 rounded-[32px] shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-800">
+            <h2 className="text-2xl font-black p-8 border-b border-slate-100 dark:border-slate-800 dark:text-white">Profil Utilisateur</h2>
+            <form onSubmit={handleSaveProfile} className="p-8 space-y-6">
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Nom</label>
+                <input type="text" value={profileForm.nom} onChange={e => setProfileForm({ ...profileForm, nom: e.target.value })} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 font-bold dark:text-white transition-all" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Prénoms</label>
+                <input type="text" value={profileForm.prenoms} onChange={e => setProfileForm({ ...profileForm, prenoms: e.target.value })} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 font-bold dark:text-white transition-all" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Nouveau mot de passe</label>
+                <input type="password" value={profileForm.mot_de_passe} onChange={e => setProfileForm({ ...profileForm, mot_de_passe: e.target.value })} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 font-bold dark:text-white transition-all" placeholder="••••••••" />
+              </div>
+              <div className="flex gap-4 pt-4">
+                <button type="button" onClick={() => setShowProfileModal(false)} className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 rounded-2xl font-black text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Annuler</button>
+                <button type="submit" className="flex-1 py-4 bg-brand-600 rounded-2xl font-black text-white shadow-xl shadow-brand-200/50 hover:bg-brand-700 transition-all">Sauvegarder</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col gap-12">
         {renderedLayout}

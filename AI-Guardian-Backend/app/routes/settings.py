@@ -4,6 +4,10 @@ from sqlalchemy import select
 from app.database import get_db
 from app.models.company import CompanySettings
 from app.schemas.settings import CompanySettingsResponse, CompanySettingsUpdate
+from fastapi import UploadFile, File
+import os
+import aiofiles
+import uuid
 
 router = APIRouter(prefix="/settings", tags=["Settings"])
 
@@ -38,3 +42,32 @@ async def update_settings(payload: CompanySettingsUpdate, db: AsyncSession = Dep
     await db.commit()
     await db.refresh(settings)
     return settings
+
+@router.post("/upload-logo")
+async def upload_logo(file: UploadFile = File(...), db: AsyncSession = Depends(get_db)):
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+    
+    # Generate unique filename
+    ext = file.filename.split('.')[-1]
+    filename = f"logo_{uuid.uuid4().hex}.{ext}"
+    filepath = os.path.join("app", "static", filename)
+    
+    async with aiofiles.open(filepath, 'wb') as out_file:
+        content = await file.read()
+        await out_file.write(content)
+        
+    logo_url = f"/static/{filename}"
+    
+    # Update settings
+    result = await db.execute(select(CompanySettings).where(CompanySettings.id == 1))
+    settings = result.scalar_one_or_none()
+    if not settings:
+        settings = CompanySettings(id=1, logo_url=logo_url)
+        db.add(settings)
+    else:
+        settings.logo_url = logo_url
+        
+    await db.commit()
+    
+    return {"logo_url": logo_url}

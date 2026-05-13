@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import {
   Settings, Play, Zap, History, Plus, BarChart3, Trash2, Mail, Smartphone, RefreshCw
 } from 'lucide-react';
+import { RealTimeProtection } from '../components/admin/RealTimeProtection';
 import { userService, departmentService, simulationService, settingsService } from '../services/api';
 
 // Sub-components
@@ -22,6 +23,7 @@ import { LeaderboardPodium } from '../components/admin/LeaderboardPodium';
 import { ReportExportButton } from '../components/admin/ReportExportButton';
 import { ThreatIntelligenceWidget, ThreatAlert } from '../components/admin/ThreatIntelligenceWidget';
 import { CompanySettingsModal } from '../components/admin/CompanySettingsModal';
+import { CriticalAlertsModal } from '../components/admin/CriticalAlertsModal';
 
 const DepartmentSkeleton = () => (
   <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-700 animate-pulse">
@@ -190,27 +192,28 @@ export const AdminDashboard: React.FC = () => {
     };
   }, []);
 
-  useEffect(() => {
-    async function fetchDepts() {
-      setLoadingDepts(true);
-      try {
-        const data = await departmentService.list();
-        setDepartments(data.map((d: any) => ({
-          id: String(d.id),
-          name: d.name,
-          staffCount: d.staff_count,
-          avgVigilance: d.avg_vigilance,
-          priority: d.priority,
-          description: d.description,
-          points: d.points || 0,
-          inviteCode: d.invite_code
-        })));
-      } catch (err) {
-        console.error("Erreur chargement départements:", err);
-      } finally {
-        setLoadingDepts(false);
-      }
+  const fetchDepts = async () => {
+    try {
+      const data = await departmentService.list();
+      setDepartments(data.map((d: any) => ({
+        id: String(d.id),
+        name: d.name,
+        staffCount: d.staff_count,
+        avgVigilance: d.avg_vigilance,
+        priority: d.priority,
+        description: d.description,
+        points: d.points || 0,
+        inviteCode: d.invite_code
+      })));
+    } catch (err) {
+      console.error("Erreur chargement départements:", err);
+    } finally {
+      setLoadingDepts(false);
     }
+  };
+
+  useEffect(() => {
+    setLoadingDepts(true);
     fetchDepts();
   }, []);
 
@@ -237,40 +240,41 @@ export const AdminDashboard: React.FC = () => {
     localStorage.setItem('admin_departments', JSON.stringify(departments));
   }, [departments]);
 
-  useEffect(() => {
-    async function fetchUsers() {
-      try {
-        const users = await userService.listUsers();
-        const mappedUsers: StaffMember[] = users.map((u: any) => {
-          let deptName = 'Non assigné';
-          if (u.department_id) {
-            const d = departments.find(d => d.id === String(u.department_id));
-            if (d) deptName = d.name;
-          } else if (u.role === 'ADMIN') {
-            deptName = 'Informatique';
-          }
-          
-          const vScore = Math.floor(Math.random() * 50) + 50;
-          let userStatus: 'active' | 'warning' | 'critical' = 'active';
-          if (vScore < 60) userStatus = 'critical';
-          else if (vScore < 75) userStatus = 'warning';
+  const fetchUsers = async () => {
+    try {
+      const users = await userService.listUsers();
+      const mappedUsers: StaffMember[] = users.map((u: any) => {
+        let deptName = 'Non assigné';
+        if (u.department_id) {
+          const d = departments.find(d => d.id === String(u.department_id));
+          if (d) deptName = d.name;
+        } else if (u.role === 'ADMIN') {
+          deptName = 'Informatique';
+        }
+        
+        const vScore = u.vigilance_score !== undefined ? u.vigilance_score : 100;
+        let userStatus: 'active' | 'warning' | 'critical' = 'active';
+        if (vScore < 60) userStatus = 'critical';
+        else if (vScore < 75) userStatus = 'warning';
 
-          return {
-            id: String(u.id),
-            firstName: u.prenoms,
-            lastName: u.nom,
-            email: u.email,
-            department: deptName,
-            vigilanceScore: vScore,
-            lastTest: new Date().toISOString().split('T')[0],
-            status: userStatus
-          };
-        });
-        setStaff(mappedUsers);
-      } catch (err) {
-        console.error("Erreur lors de la récupération des utilisateurs:", err);
-      }
+        return {
+          id: String(u.id),
+          firstName: u.prenoms,
+          lastName: u.nom,
+          email: u.email,
+          department: deptName,
+          vigilanceScore: Math.round(vScore),
+          lastTest: new Date().toISOString().split('T')[0],
+          status: userStatus
+        };
+      });
+      setStaff(mappedUsers);
+    } catch (err) {
+      console.error("Erreur lors de la récupération des utilisateurs:", err);
     }
+  };
+
+  useEffect(() => {
     if (!loadingDepts) {
       fetchUsers().then(() => {
         // Une fois les utilisateurs chargés, on met à jour le staffCount réel des départements
@@ -281,6 +285,18 @@ export const AdminDashboard: React.FC = () => {
       });
     }
   }, [departments.length, loadingDepts]); // On surveille le nombre de départements
+
+  // Rafraîchissement automatique toutes les 30 secondes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (companyInfo.isConfigured) {
+        fetchSimulations();
+        fetchUsers();
+        fetchDepts();
+      }
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [companyInfo.isConfigured, departments.length]);
 
   const handleResetData = async () => {
     try {
@@ -355,7 +371,22 @@ export const AdminDashboard: React.FC = () => {
     setShowSimulationModal(true);
   };
 
-  const handleSimulateThreat = (threat: ThreatAlert) => {
+  const handleSimulateThreat = async (threat: ThreatAlert) => {
+    setNotification({ message: "Création du modèle Gophish en cours...", type: 'success' });
+    try {
+      await fetch('http://localhost:8000/simulations/threat-template', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: threat.templateName,
+          subject: threat.title,
+          html_content: `<html><body><p>${threat.description}</p><p><a href="{{.URL}}">Cliquez ici pour vérifier</a></p></body></html>`
+        })
+      });
+    } catch (e) {
+      console.error("Erreur lors de la création du modèle:", e);
+    }
+    
     setSimulationForm({
       ...simulationForm,
       name: `Simu: ${threat.title}`,
@@ -522,13 +553,11 @@ export const AdminDashboard: React.FC = () => {
   const handleSyncGophish = async () => {
     setIsLaunching(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/simulations/sync`);
-      if (response.ok) {
-        await fetchDepts();
-        await fetchUsers();
-        await fetchSimulations();
-        setNotification({ message: "Synchronisation Gophish terminée !", type: 'success' });
-      }
+      await simulationService.sync();
+      await fetchDepts();
+      await fetchUsers();
+      await fetchSimulations();
+      setNotification({ message: "Synchronisation Gophish terminée !", type: 'success' });
     } catch (err) {
       setNotification({ message: "Erreur de synchronisation", type: 'error' });
     } finally {
@@ -766,6 +795,12 @@ export const AdminDashboard: React.FC = () => {
         onClose={() => setShowResultsModal(false)}
         simulationId={selectedSimulationId!}
         simulationName={selectedSimulationName}
+      />
+      <CriticalAlertsModal 
+        isOpen={showCriticalAlerts} 
+        onClose={() => setShowCriticalAlerts(false)} 
+        staff={staff} 
+        onSendWarning={sendWarningEmail} 
       />
       <NotificationToast notification={notification} />
     </div>

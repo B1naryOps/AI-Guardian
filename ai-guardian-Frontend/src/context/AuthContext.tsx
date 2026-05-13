@@ -18,11 +18,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const savedToken = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
+    
     if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
+      try {
+        // Decode JWT payload (base64url)
+        const payloadBase64 = savedToken.split('.')[1];
+        const decodedPayload = JSON.parse(atob(payloadBase64));
+        const exp = decodedPayload.exp;
+        
+        if (exp && Date.now() >= exp * 1000) {
+          // Token expired
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+        } else {
+          setToken(savedToken);
+          setUser(JSON.parse(savedUser));
+        }
+      } catch (e) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
     }
   }, []);
+
+  useEffect(() => {
+    if (!token) return;
+    
+    const interval = setInterval(() => {
+      try {
+        const payloadBase64 = token.split('.')[1];
+        const decodedPayload = JSON.parse(atob(payloadBase64));
+        const exp = decodedPayload.exp;
+        
+        if (exp && Date.now() >= exp * 1000) {
+          logout();
+          window.location.href = '/auth'; // Force redirection
+        }
+      } catch (e) {
+        logout();
+      }
+    }, 60000); // Check every minute
+    
+    return () => clearInterval(interval);
+  }, [token]);
 
   const login = (newToken: string, newUser: User) => {
     setToken(newToken);

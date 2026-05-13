@@ -20,6 +20,8 @@ export const AuditLogsSection: React.FC = () => {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   useEffect(() => {
     const fetchLogs = async () => {
@@ -34,6 +36,9 @@ export const AuditLogsSection: React.FC = () => {
     };
     fetchLogs();
   }, []);
+
+  const totalPages = Math.ceil(logs.length / ITEMS_PER_PAGE);
+  const currentLogs = logs.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   return (
     <div className="bg-white dark:bg-slate-900 p-10 rounded-[40px] shadow-sm border border-slate-100 dark:border-slate-800 mb-12">
@@ -72,7 +77,7 @@ export const AuditLogsSection: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
-              {logs.map((log, index) => (
+              {currentLogs.map((log, index) => (
                 <motion.tr 
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -115,6 +120,29 @@ export const AuditLogsSection: React.FC = () => {
               ))}
             </tbody>
           </table>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-6 px-4 py-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <span className="text-sm font-medium text-slate-500">
+                Page {currentPage} sur {totalPages}
+              </span>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 rounded-xl text-sm font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 disabled:opacity-50"
+                >
+                  Précédent
+                </button>
+                <button 
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 rounded-xl text-sm font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 disabled:opacity-50"
+                >
+                  Suivant
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

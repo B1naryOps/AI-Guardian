@@ -1,9 +1,11 @@
 --- ARBORESCENCE DU PROJET (C:\Users\Camille\Downloads\ai-guardian-V2) ---
 
 ai-guardian-V2/
+    ai-guardian.service
     config.py
     README-INTEGRATION.md
     AI-Guardian-Backend/
+        .env
         .gitignore
         alembic.ini
         cleanup_db.py
@@ -15,6 +17,7 @@ ai-guardian-V2/
         README.md
         requirements.txt
         test_ml.py
+        test_production.py
         train_model.py
         alembic/
             env.py
@@ -30,6 +33,7 @@ ai-guardian-V2/
                 945e5997c006_add_invite_code_to_departments.py
                 b2918d099859_create_simulation_targets_table.py
                 b7a0b3e95ef6_add_customization_fields.py
+                c94f673bcb0c_add_real_threats_table.py
                 dd28ea21c657_add_text_field_to_simulations.py
                 f85994197703_add_phishing_campaign_metrics_and_.py
         app/
@@ -46,6 +50,7 @@ ai-guardian-V2/
                 jwt.py
                 remediation_tasks.py
                 roles.py
+                scanner.py
                 security.py
             middleware/
                 audit.py
@@ -68,6 +73,7 @@ ai-guardian-V2/
                 company.py
                 department.py
                 ml_analysis.py
+                real_threat.py
                 remediation.py
                 simulation.py
                 simulation_target.py
@@ -81,6 +87,7 @@ ai-guardian-V2/
                 remediation.py
                 settings.py
                 simulations.py
+                threats.py
                 users.py
                 ws.py
                 __init__.py
@@ -122,6 +129,7 @@ ai-guardian-V2/
                     LeaderboardPodium.tsx
                     NotificationToast.tsx
                     PassportWidget.tsx
+                    RealTimeProtection.tsx
                     ReportExportButton.tsx
                     ResetConfirmModal.tsx
                     SimulationModal.tsx
@@ -151,6 +159,33 @@ ai-guardian-V2/
 ==================================================
 
 --- CONTENU DES FICHIERS ---
+
+FILE_START: ai-guardian.service
+--------------------
+[Unit]
+Description=AI Guardian Backend - FastAPI Application
+After=network.target
+
+[Service]
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/AI-Guardian/AI-Guardian-Backend
+Environment="PATH=/opt/AI-Guardian/AI-Guardian-Backend/venv/bin"
+# Ajoutez d'autres variables d'environnement si nécessaire (ex: DATABASE_URL, GOPHISH_API_KEY)
+# Environment="GOPHISH_API_KEY=votre_cle_api"
+# Environment="GOPHISH_URL=https://localhost:3333"
+
+ExecStart=/opt/AI-Guardian/AI-Guardian-Backend/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+# Redémarrer automatiquement si le processus plante
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+
+--------------------
+FILE_END: ai-guardian.service
 
 FILE_START: config.py
 --------------------
@@ -310,6 +345,34 @@ npm run dev
 Le frontend sera disponible sur **http://localhost:5173** et communiquera avec le backend via le proxy Vite.
 --------------------
 FILE_END: README-INTEGRATION.md
+
+FILE_START: AI-Guardian-Backend\.env
+--------------------
+# --- CONFIGURATION GÉNÉRALE ---
+SECRET_KEY=votre_cle_secrete_ultra_securisee_123456
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=1440
+
+# --- BASE DE DONNÉES (SQLITE LOCAL) ---
+DATABASE_URL=sqlite+aiosqlite:///./app.db
+
+# --- CONFIGURATION GOPHISH ---
+GOPHISH_API_KEY=votre_cle_api_gophish_ici
+GOPHISH_URL=https://127.0.0.1:3333
+
+# --- BOUCLIER DE PROTECTION (IMAP) ---
+# Serveur IMAP (ex: imap.gmail.com, imap.outlook.com)
+IMAP_SERVER=imap.gmail.com
+# Votre email de test
+IMAP_USER=votre-email@gmail.com
+# Mot de passe d'application (obligatoire pour Gmail/Outlook)
+IMAP_PASSWORD=votre-mot-de-passe-application
+
+# --- CONFIGURATION FRONTEND ---
+FRONTEND_URL=http://localhost:5173
+
+--------------------
+FILE_END: AI-Guardian-Backend\.env
 
 FILE_START: AI-Guardian-Backend\.gitignore
 --------------------
@@ -10664,69 +10727,71 @@ FILE_END: AI-Guardian-Backend\README.md
 
 FILE_START: AI-Guardian-Backend\requirements.txt
 --------------------
-aiosqlite==0.22.1
-alembic==1.18.4
-annotated-doc==0.0.4
-annotated-types==0.7.0
-anyio==4.13.0
-argon2-cffi==25.1.0
-argon2-cffi-bindings==25.1.0
-bcrypt==5.0.0
-certifi==2026.2.25
-cffi==2.0.0
-click==8.3.2
-colorama==0.4.6
-cryptography==46.0.7
-dnspython==2.8.0
-ecdsa==0.19.2
-email-validator==2.3.0
-exceptiongroup==1.3.1
-fastapi==0.136.0
-greenlet==3.4.0
-h11==0.16.0
-httpcore==1.0.9
-httpx==0.28.1
-idna==3.12
-importlib_metadata==9.0.0
-importlib_resources==7.1.0
-iniconfig==2.3.0
-joblib==1.5.3
-jose==1.0.0
-Mako==1.3.11
-MarkupSafe==3.0.3
-mypy_extensions==1.1.0
-numpy==2.4.4
-packaging==26.1
-passlib==1.7.4
-playwright==1.58.0
-pluggy==1.6.0
-psycopg2-binary==2.9.12
-pyasn1==0.6.3
-pycparser==3.0
-pydantic==2.13.3
-pydantic_core==2.46.3
-pyee==13.0.1
-Pygments==2.20.0
-pytest==9.0.3
-pytest-asyncio==1.3.0
-python-jose==3.5.0
-python-multipart==0.0.26
-rsa==4.9.1
-scikit-learn==1.8.0
-scipy==1.17.1
-six==1.17.0
-sniffio==1.3.1
-SQLAlchemy==2.0.49
-SQLAlchemy-Utils==0.42.1
-starlette==1.0.0
-threadpoolctl==3.6.0
-tomli==2.4.1
-typing-inspect==0.9.0
-typing-inspection==0.4.2
-typing_extensions==4.15.0
-uvicorn==0.45.0
-websockets==16.0
-zipp==3.23.1
+aiosqlite
+alembic
+annotated-doc
+annotated-types
+anyio
+argon2-cffi
+argon2-cffi-bindings
+bcrypt
+certifi
+cffi
+click
+colorama
+cryptography
+dnspython
+ecdsa
+email-validator
+exceptiongroup
+fastapi
+greenlet
+h11
+httpcore
+httpx
+idna
+importlib_metadata
+importlib_resources
+iniconfig
+joblib
+Mako
+MarkupSafe
+mypy_extensions
+numpy
+packaging
+pandas
+passlib
+playwright
+pluggy
+psycopg2-binary
+pyasn1
+pycparser
+pydantic
+pydantic_core
+pyee
+Pygments
+pytest
+pytest-asyncio
+python-jose
+python-multipart
+rsa
+scikit-learn
+scipy
+six
+sniffio
+SQLAlchemy
+SQLAlchemy-Utils
+starlette
+threadpoolctl
+tomli
+typing-inspect
+typing-inspection
+typing_extensions
+uvicorn
+websockets
+zipp
+gophish
+python-dotenv
 
 --------------------
 FILE_END: AI-Guardian-Backend\requirements.txt
@@ -10756,6 +10821,75 @@ print(result)
 
 --------------------
 FILE_END: AI-Guardian-Backend\test_ml.py
+
+FILE_START: AI-Guardian-Backend\test_production.py
+--------------------
+import os
+import sys
+import asyncio
+from dotenv import load_dotenv
+from gophish import Gophish
+
+# S'assurer qu'on peut importer l'app
+sys.path.insert(0, os.path.dirname(__file__))
+load_dotenv()
+
+def test_gophish():
+    print("--- TEST GOPHISH ---")
+    api_key = os.getenv("GOPHISH_API_KEY")
+    url = os.getenv("GOPHISH_URL", "https://127.0.0.1:3333")
+    
+    if not api_key:
+        print("❌ ERREUR: GOPHISH_API_KEY non trouvée dans .env")
+        return False
+        
+    try:
+        api = Gophish(api_key, host=url, verify=False)
+        campaigns = api.campaigns.get()
+        print(f"✅ SUCCÈS ! Connexion à Gophish établie sur {url}.")
+        print(f"✅ Gophish répond correctement (Trouvé {len(campaigns)} campagnes existantes).")
+        return True
+    except Exception as e:
+        print(f"❌ ERREUR de connexion à Gophish : {e}")
+        return False
+
+def test_ml_models():
+    print("\n--- TEST MACHINE LEARNING ---")
+    try:
+        # Import tardif pour éviter les crashs si les dépendances manquent
+        from app.ml.service import analyze_text_ml
+        
+        test_text = "Félicitations, vous avez gagné un iPhone gratuit ! Cliquez ici."
+        result = analyze_text_ml(test_text)
+        
+        print("✅ SUCCÈS ! Les modèles ML se sont chargés correctement.")
+        print(f"   Texte de test analysé: '{test_text}'")
+        print(f"   Résultat: {'Phishing' if result['is_phishing'] else 'Légitime'} (Confiance: {result['confidence']}%)")
+        return True
+    except Exception as e:
+        print(f"❌ ERREUR ML : {e}")
+        return False
+
+if __name__ == "__main__":
+    import urllib3
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    
+    print("====================================")
+    print("🚀 VÉRIFICATION DU DÉPLOIEMENT 🚀")
+    print("====================================\n")
+    
+    gophish_ok = test_gophish()
+    ml_ok = test_ml_models()
+    
+    print("\n====================================")
+    if gophish_ok and ml_ok:
+        print("🏆 TOUT EST OPÉRATIONNEL ! Le projet est prêt pour la production.")
+    else:
+        print("⚠️ CERTAINS TESTS ONT ÉCHOUÉ. Vérifiez les logs ci-dessus.")
+    print("====================================")
+
+--------------------
+FILE_END: AI-Guardian-Backend\test_production.py
 
 FILE_START: AI-Guardian-Backend\train_model.py
 --------------------
@@ -11415,6 +11549,50 @@ def downgrade() -> None:
 --------------------
 FILE_END: AI-Guardian-Backend\alembic\versions\b7a0b3e95ef6_add_customization_fields.py
 
+FILE_START: AI-Guardian-Backend\alembic\versions\c94f673bcb0c_add_real_threats_table.py
+--------------------
+"""add_real_threats_table
+
+Revision ID: c94f673bcb0c
+Revises: b7a0b3e95ef6
+Create Date: 2026-05-03 12:12:39.827638
+
+"""
+from typing import Sequence, Union
+from alembic import op
+import sqlalchemy as sa
+
+# revision identifiers, used by Alembic.
+revision: str = 'c94f673bcb0c'
+down_revision: Union[str, None] = 'b7a0b3e95ef6'
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
+
+def upgrade() -> None:
+    # ### commands auto generated by Alembic - please adjust! ###
+    op.create_table('real_threats',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('sender', sa.String(), nullable=True),
+    sa.Column('subject', sa.String(), nullable=True),
+    sa.Column('content_preview', sa.Text(), nullable=True),
+    sa.Column('risk_score', sa.Float(), nullable=True),
+    sa.Column('threat_type', sa.String(), nullable=True),
+    sa.Column('detected_at', sa.DateTime(), nullable=True),
+    sa.Column('status', sa.String(), nullable=True),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_real_threats_id'), 'real_threats', ['id'], unique=False)
+    # ### end Alembic commands ###
+
+def downgrade() -> None:
+    # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_index(op.f('ix_real_threats_id'), table_name='real_threats')
+    op.drop_table('real_threats')
+    # ### end Alembic commands ###
+
+--------------------
+FILE_END: AI-Guardian-Backend\alembic\versions\c94f673bcb0c_add_real_threats_table.py
+
 FILE_START: AI-Guardian-Backend\alembic\versions\dd28ea21c657_add_text_field_to_simulations.py
 --------------------
 """Add text field to simulations
@@ -11534,6 +11712,8 @@ from app.routes.audit import router as audit_router
 from app.routes.settings import router as settings_router
 from app.routes.ws import router as ws_router
 from app.routes.remediation import router as remediation_router
+from app.routes.threats import router as threats_router
+from app.core.scanner import start_periodic_scanner
 from app.middleware.audit import AuditMiddleware
 # Modèles importés via app.models dans Alembic
 from fastapi.responses import FileResponse
@@ -11541,15 +11721,20 @@ import os
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Entraînement des modèles ML
     asyncio.create_task(asyncio.to_thread(check_and_train_models)) 
+    # Démarrage du bouclier de protection
+    asyncio.create_task(start_periodic_scanner(interval_seconds=60))
     yield
 
 app = FastAPI(title="AI Guardian", lifespan=lifespan)
 
-# ─── CORS ─────────────────────────────────────────────────────────────────────
-# Allows the React dev server (port 5173) and any production domain.
-# Adjust origins in production to restrict access.
-origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
+# Configuration CORS sécurisée pour la production
+origins = [
+    "http://192.168.111.128",
+    "http://192.168.111.128:5173",
+    "http://localhost:5173"
+]
 
 app.add_middleware(
     CORSMiddleware,
@@ -11559,12 +11744,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 FAVICON_PATH = os.path.join("app", "favicon.png")
 
 app.include_router(users_router)
 app.include_router(auth_router)
 app.include_router(departments_router)
 app.include_router(simulations_router)
+app.include_router(threats_router)
 app.include_router(audit_router)
 app.include_router(settings_router)
 app.include_router(ws_router)
@@ -11647,31 +11834,188 @@ FILE_END: AI-Guardian-Backend\app\core\auth.py
 FILE_START: AI-Guardian-Backend\app\core\communications.py
 --------------------
 import asyncio
+import os
+from datetime import datetime
+from gophish import Gophish
+from gophish.models import Campaign, Template, Group, User as GophishUser, SMTP
 from app.models.simulation import Simulation
 from app.models.simulation_target import SimulationTarget
 from app.models.user import User
+from dotenv import load_dotenv
 
-async def send_simulation_message(simulation: Simulation, target: SimulationTarget, user: User):
+# Charger les variables d'environnement depuis le fichier .env
+load_dotenv()
+
+# Configuration Gophish (à définir dans le .env)
+GOPHISH_API_KEY = os.getenv("GOPHISH_API_KEY", "")
+GOPHISH_URL = os.getenv("GOPHISH_URL", "https://localhost:3333")
+
+def get_gophish_client():
+    if not GOPHISH_API_KEY:
+        return None
+    # Disable SSL verify if using self-signed certs (common with Gophish out of the box)
+    return Gophish(GOPHISH_API_KEY, host=GOPHISH_URL, verify=False)
+
+async def send_simulation_message(email: str, simulation_name: str, channel: str, text: str = "", target_id: int = None):
     """
-    Simule l'envoi d'un message via email ou SMS selon le canal choisi.
+    Cette fonction est appelée en arrière-plan. On utilise des types simples 
+    pour éviter les erreurs de session SQLAlchemy (MissingGreenlet).
     """
-    tracking_link = f"http://localhost:8000/simulations/track/{target.id}"
+    api = get_gophish_client()
     
-    if simulation.channel == "sms":
-        print(f"[TWILIO MOCK] Envoi SMS à {user.prenoms} {user.nom} ({user.email})")
-        print(f"[TWILIO MOCK] Contenu: {simulation.text}")
-        print(f"[TWILIO MOCK] Lien de tracking: {tracking_link}")
-        print(f"[TWILIO MOCK] SMS envoyé avec succès !\n")
-    else:
-        print(f"[SMTP MOCK] Envoi Email à {user.prenoms} {user.nom} ({user.email})")
-        print(f"[SMTP MOCK] Sujet: {simulation.name}")
-        print(f"[SMTP MOCK] De: {simulation.sending_profile}")
-        print(f"[SMTP MOCK] Contenu HTML: {simulation.template}")
-        print(f"[SMTP MOCK] Lien de tracking: {tracking_link}")
-        print(f"[SMTP MOCK] Email envoyé avec succès !\n")
+    if not api:
+        print(f"[DEBUG] Gophish non configuré. Simulation d'envoi pour {email}")
+        return
+
+    # Si c'est du SMS
+    if channel == "sms":
+        print(f"[SMS] Envoi simulé à {email} : {text}")
+        return
+
+    # Pour l'email via Gophish
+    print(f"[GOPHISH] Campagne en cours pour {email}")
+
+import time
+
+def create_gophish_campaign(simulation_name: str, targets: list, template_name: str):
+    """
+    Crée un groupe et une campagne dans Gophish avec vérifications de sécurité.
+    """
+    api = get_gophish_client()
+    if not api:
+        print("[GOPHISH] API non configurée.")
+        return None
+
+    if not targets:
+        print("[GOPHISH] Aucune cible pour cette campagne. Annulation.")
+        return None
+
+    try:
+        from gophish.models import Page
+        # 1. Créer le groupe de cibles
+        g_targets = [GophishUser(first_name=t['first_name'], last_name=t['last_name'], email=t['email']) for t in targets]
+        # On ajoute un timestamp pour éviter les collisions de noms de groupes
+        group_name = f"Group_{simulation_name}_{int(time.time())}"
+        group = api.groups.post(Group(name=group_name, targets=g_targets))
         
-    # Simulate network delay
-    await asyncio.sleep(0.1)
+        # 2. Vérifier les profils SMTP
+        smtp_profiles = api.smtp.get()
+        if not smtp_profiles:
+            print("[GOPHISH] ERREUR : Aucun 'Sending Profile' trouvé. Créez-en un dans Gophish !")
+            return None
+        smtp_name = smtp_profiles[0].name
+
+        # 3. Vérifier les Templates
+        templates = api.templates.get()
+        if not templates:
+            print("[GOPHISH] ERREUR : Aucun 'Email Template' trouvé. Créez-en un dans Gophish !")
+            return None
+        t_name = templates[0].name
+
+        # 4. Vérifier les Landing Pages
+        pages = api.pages.get()
+        if not pages:
+            print("[GOPHISH] ERREUR : Aucune 'Landing Page' trouvée. Créez-en une dans Gophish !")
+            return None
+        p_name = pages[0].name
+
+        # 5. Créer et lancer la campagne
+        campaign = api.campaigns.post(Campaign(
+            name=f"{simulation_name}_{int(time.time())}",
+            groups=[Group(name=group.name)],
+            template=Template(name=t_name),
+            smtp=SMTP(name=smtp_name),
+            page=Page(name=p_name),
+            url="http://192.168.111.128:8080",
+        ))
+        print(f"[GOPHISH] Campagne '{campaign.name}' lancée avec succès.")
+        return campaign
+    except Exception as e:
+        print(f"[ERREUR GOPHISH DETAIL] {e}")
+        return None
+
+async def sync_gophish_results(db):
+    """
+    Récupère les clics depuis Gophish et met à jour AI-Guardian.
+    """
+    api = get_gophish_client()
+    if not api: return
+
+    try:
+        campaigns = api.campaigns.get()
+        from app.models.simulation_target import SimulationTarget
+        from app.models.department import Department
+        from app.models.user import User
+        from sqlalchemy import select, update
+
+        for camp in campaigns:
+            for event in camp.timeline:
+                # Évènement de CLIC
+                if event.message == "Clicked Link":
+                    email = event.email
+                    user_res = await db.execute(select(User).where(User.email == email))
+                    user = user_res.scalar_one_or_none()
+                    
+                    if user:
+                        # 1. Update SimulationTarget (has_clicked = True)
+                        target_res = await db.execute(
+                            select(SimulationTarget)
+                            .where(SimulationTarget.user_id == user.id)
+                            .where(SimulationTarget.has_clicked == False)
+                        )
+                        target = target_res.scalar_one_or_none()
+
+                        if target:
+                            target.has_clicked = True
+                            target.clicked_at = datetime.utcnow()
+                            
+                            # 2. Update Global Simulation Counter
+                            await db.execute(
+                                update(Simulation)
+                                .where(Simulation.id == target.simulation_id)
+                                .values(total_clicks=Simulation.total_clicks + 1)
+                            )
+                        
+                        # 3. Baisser le score du département (Malus de vigilance)
+                        if user.department_id:
+                            dept_res = await db.execute(select(Department).where(Department.id == user.department_id))
+                            dept = dept_res.scalar_one_or_none()
+                            if dept:
+                                new_vigilance = max(0, (dept.avg_vigilance or 100) - 10) # -10% par clic
+                                await db.execute(
+                                    update(Department).where(Department.id == dept.id).values(avg_vigilance=new_vigilance)
+                                )
+
+                # Évènement d'OUVERTURE
+                elif event.message == "Email Opened":
+                    email = event.email
+                    user_res = await db.execute(select(User).where(User.email == email))
+                    user = user_res.scalar_one_or_none()
+                    if user:
+                        await db.execute(
+                            update(SimulationTarget)
+                            .where(SimulationTarget.user_id == user.id)
+                            .values(has_opened=True)
+                        )
+            
+            # Après avoir traité tous les évènements d'une campagne, on recalcule le total réel
+            # Cela corrige les compteurs si des clics ont été synchronisés partiellement
+            from sqlalchemy import func
+            sim_res = await db.execute(select(Simulation).where(Simulation.name.like(f"%{camp.name}%")))
+            sim = sim_res.scalar_one_or_none()
+            if sim:
+                count_res = await db.execute(
+                    select(func.count(SimulationTarget.id))
+                    .where(SimulationTarget.simulation_id == sim.id)
+                    .where(SimulationTarget.has_clicked == True)
+                )
+                real_clicks = count_res.scalar()
+                sim.total_clicks = real_clicks
+
+        await db.commit()
+        print("[GOPHISH SYNC] Synchronisation et recalcul terminés avec succès.")
+    except Exception as e:
+        print(f"[GOPHISH SYNC ERROR] {e}")
 
 --------------------
 FILE_END: AI-Guardian-Backend\app\core\communications.py
@@ -11806,6 +12150,110 @@ def require_admin(current_user: User = Depends(get_current_user)):
 
 --------------------
 FILE_END: AI-Guardian-Backend\app\core\roles.py
+
+FILE_START: AI-Guardian-Backend\app\core\scanner.py
+--------------------
+import imaplib
+import email
+from email.header import decode_header
+import os
+import asyncio
+from datetime import datetime
+from app.database import SessionLocal
+from app.models.real_threat import RealThreat
+from app.ml.service import analyze_text_ml
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# Configuration IMAP (à mettre dans le .env)
+IMAP_SERVER = os.getenv("IMAP_SERVER", "imap.gmail.com")
+IMAP_USER = os.getenv("IMAP_USER", "")
+IMAP_PASSWORD = os.getenv("IMAP_PASSWORD", "")
+
+async def scan_mailbox():
+    """
+    Scanne la boîte mail configurée et analyse les nouveaux messages.
+    """
+    if not IMAP_USER or not IMAP_PASSWORD:
+        print("[SCANNER] IMAP non configuré. En attente de credentials...")
+        return
+
+    try:
+        # Connexion au serveur
+        mail = imaplib.IMAP4_SSL(IMAP_SERVER)
+        mail.login(IMAP_USER, IMAP_PASSWORD)
+        mail.select("inbox")
+
+        # Recherche des mails non lus
+        status, messages = mail.search(None, 'UNSEEN')
+        if status != "OK":
+            return
+
+        for num in messages[0].split():
+            # Récupération du mail
+            status, data = mail.fetch(num, '(RFC822)')
+            if status != "OK":
+                continue
+
+            raw_email = data[0][1]
+            msg = email.message_from_bytes(raw_email)
+
+            # Extraction des infos
+            subject, encoding = decode_header(msg["Subject"])[0]
+            if isinstance(subject, bytes):
+                subject = subject.decode(encoding or "utf-8")
+            
+            sender = msg.get("From")
+            
+            # Extraction du corps du mail
+            body = ""
+            if msg.is_multipart():
+                for part in msg.walk():
+                    if part.get_content_type() == "text/plain":
+                        body = part.get_payload(decode=True).decode()
+                        break
+            else:
+                body = msg.get_payload(decode=True).decode()
+
+            # --- ANALYSE IA ---
+            analysis = analyze_text_ml(body)
+            risk_score = analysis["confidence"] / 100.0
+            
+            if risk_score > 0.5:
+                print(f"[SCANNER] MENACE DÉTECTÉE : {subject} de {sender} (Score: {risk_score})")
+                
+                # Enregistrement en base de données
+                db = SessionLocal()
+                try:
+                    new_threat = RealThreat(
+                        sender=sender,
+                        subject=subject,
+                        content_preview=body[:500],
+                        risk_score=risk_score,
+                        threat_type="Phishing" if risk_score > 0.7 else "Suspect",
+                        status="quarantined" if risk_score > 0.8 else "blocked"
+                    )
+                    db.add(new_threat)
+                    db.commit()
+                finally:
+                    db.close()
+
+        mail.logout()
+    except Exception as e:
+        print(f"[SCANNER ERROR] {e}")
+
+async def start_periodic_scanner(interval_seconds=60):
+    """
+    Lance le scanner en boucle.
+    """
+    print(f"[SCANNER] Démarrage du bouclier de protection (Intervalle: {interval_seconds}s)")
+    while True:
+        await scan_mailbox()
+        await asyncio.sleep(interval_seconds)
+
+--------------------
+FILE_END: AI-Guardian-Backend\app\core\scanner.py
 
 FILE_START: AI-Guardian-Backend\app\core\security.py
 --------------------
@@ -12266,6 +12714,27 @@ class MLAnalysis(Base):
 --------------------
 FILE_END: AI-Guardian-Backend\app\models\ml_analysis.py
 
+FILE_START: AI-Guardian-Backend\app\models\real_threat.py
+--------------------
+from sqlalchemy import Column, Integer, String, DateTime, Float, Text
+from datetime import datetime
+from app.database import Base
+
+class RealThreat(Base):
+    __tablename__ = "real_threats"
+
+    id = Column(Integer, primary_key=True, index=True)
+    sender = Column(String)
+    subject = Column(String)
+    content_preview = Column(Text)
+    risk_score = Column(Float) # 0.0 to 1.0
+    threat_type = Column(String) # Phishing, Malware, Spam
+    detected_at = Column(DateTime, default=datetime.utcnow)
+    status = Column(String, default="blocked") # blocked, quarantined
+
+--------------------
+FILE_END: AI-Guardian-Backend\app\models\real_threat.py
+
 FILE_START: AI-Guardian-Backend\app\models\remediation.py
 --------------------
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
@@ -12384,6 +12853,7 @@ from app.models.ml_analysis import MLAnalysis
 from app.models.simulation_target import SimulationTarget
 from app.models.company import CompanySettings
 from app.models.remediation import UserTrainingStatus
+from app.models.real_threat import RealThreat
 --------------------
 FILE_END: AI-Guardian-Backend\app\models\__init__.py
 
@@ -12806,6 +13276,15 @@ from app.core.communications import send_simulation_message
 
 router = APIRouter(prefix="/simulations", tags=["Simulations"])
 
+@router.get("/sync")
+async def sync_simulations(db: AsyncSession = Depends(get_db)):
+    """
+    Déclenche manuellement la synchronisation avec Gophish.
+    """
+    from app.core.communications import sync_gophish_results
+    await sync_gophish_results(db)
+    return {"message": "Synchronisation terminée"}
+
 @router.get("/", response_model=List[SimulationResponse])
 async def list_simulations(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Simulation).order_by(Simulation.created_at.desc()))
@@ -12846,12 +13325,36 @@ async def create_simulation(sim: SimulationCreate, background_tasks: BackgroundT
     
     db_sim.total_targets = len(targets_list)
     
+    # 3. Préparer TOUTES les données nécessaires avant le commit
+    # On extrait tout dans des listes simples car les objets 'user' et 'target' expirent après le commit
+    simulation_targets_data = []
+    for user, target in zip(users, targets_list):
+        simulation_targets_data.append({
+            "email": user.email,
+            "first_name": user.prenoms,
+            "last_name": user.nom,
+            "target_id": target.id
+        })
+    
     await db.commit()
     await db.refresh(db_sim)
 
-    # 4. Simuler l'envoi des messages
-    for user, target in zip(users, targets_list):
-        background_tasks.add_task(send_simulation_message, db_sim, target, user)
+    # 4. Déclencher la campagne réelle (Gophish ou Email)
+    if sim.channel == "email":
+        from app.core.communications import create_gophish_campaign
+        g_targets = [{"first_name": t['first_name'], "last_name": t['last_name'], "email": t['email']} for t in simulation_targets_data]
+        create_gophish_campaign(db_sim.name, g_targets, db_sim.template or "Default")
+    
+    # On lance les tâches de fond avec les données extraites
+    for target_data in simulation_targets_data:
+        background_tasks.add_task(
+            send_simulation_message, 
+            email=target_data["email"],
+            simulation_name=db_sim.name,
+            channel=db_sim.channel,
+            text=db_sim.text or "",
+            target_id=target_data["target_id"]
+        )
 
     return db_sim
 
@@ -12906,11 +13409,18 @@ async def track_click(target_id: int, background_tasks: BackgroundTasks, db: Asy
 @router.get("/{id}/stats", response_model=List[SimulationTargetResponse])
 async def get_simulation_targets(id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(SimulationTarget)
+        select(SimulationTarget, User.prenoms, User.nom)
+        .join(User, SimulationTarget.user_id == User.id)
         .where(SimulationTarget.simulation_id == id)
         .order_by(SimulationTarget.created_at.desc())
     )
-    return result.scalars().all()
+    targets = []
+    for row in result.all():
+        target, prenoms, nom = row
+        target_dict = SimulationTargetResponse.model_validate(target)
+        target_dict.user_name = f"{prenoms} {nom}"
+        targets.append(target_dict)
+    return targets
 
 @router.delete("/{id}")
 async def delete_simulation(id: int, db: AsyncSession = Depends(get_db)):
@@ -12926,6 +13436,44 @@ async def delete_simulation(id: int, db: AsyncSession = Depends(get_db)):
 
 --------------------
 FILE_END: AI-Guardian-Backend\app\routes\simulations.py
+
+FILE_START: AI-Guardian-Backend\app\routes\threats.py
+--------------------
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, desc
+from app.database import get_db
+from app.models.real_threat import RealThreat
+from typing import List
+from pydantic import BaseModel
+from datetime import datetime
+
+router = APIRouter(prefix="/threats", tags=["Real Protection"])
+
+class ThreatResponse(BaseModel):
+    id: int
+    sender: str
+    subject: str
+    risk_score: float
+    threat_type: str
+    detected_at: datetime
+    status: str
+
+    class Config:
+        from_attributes = True
+
+@router.get("/", response_model=List[ThreatResponse])
+async def list_real_threats(db: AsyncSession = Depends(get_db)):
+    """
+    Liste les menaces réelles détectées par le bouclier IMAP.
+    """
+    result = await db.execute(
+        select(RealThreat).order_by(desc(RealThreat.detected_at))
+    )
+    return result.scalars().all()
+
+--------------------
+FILE_END: AI-Guardian-Backend\app\routes\threats.py
 
 FILE_START: AI-Guardian-Backend\app\routes\users.py
 --------------------
@@ -13148,6 +13696,7 @@ class SimulationTargetResponse(BaseModel):
 
     id: int
     user_id: int
+    user_name: Optional[str] = None
     has_opened: bool
     has_clicked: bool
     has_reported: bool
@@ -13686,7 +14235,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate, onLogou
           onClick={() => onNavigate(isAuthenticated ? 'dashboard' : 'landing')}
         >
           <div className="w-10 h-10 bg-brand-600 text-white rounded-xl flex items-center justify-center group-hover:rotate-12 transition-all shadow-lg shadow-brand-200/50 overflow-hidden">
-            <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
+            <img src="/logo.png?v=2" alt="Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
           </div>
           <div className="flex flex-col">
             <span className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tighter leading-none">AI Guardian</span>
@@ -14232,9 +14781,9 @@ export const CompanySettingsModal: React.FC<CompanySettingsModalProps> = ({
                 <div className="flex gap-6 items-center">
                   <div className="w-24 h-24 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden shrink-0 p-2">
                     {logoUrl ? (
-                      <img src={logoUrl} alt="Logo" className="max-w-full max-h-full object-contain" onError={(e) => (e.currentTarget.src = '/logo.png')} />
+                      <img src={logoUrl} alt="Logo de l'entreprise" className="max-w-full max-h-full object-contain" onError={(e) => (e.currentTarget.src = '/logo.png?v=2')} />
                     ) : (
-                      <img src="/logo.png" alt="Default Logo" className="w-full h-full object-cover rounded-xl" />
+                      <img src="/logo.png?v=2" alt="Logo par défaut" className="w-full h-full object-cover" />
                     )}
                   </div>
                   <div className="flex-1">
@@ -14742,6 +15291,128 @@ export const PassportWidget: React.FC<PassportWidgetProps> = ({ xp, level }) => 
 
 --------------------
 FILE_END: ai-guardian-Frontend\src\components\admin\PassportWidget.tsx
+
+FILE_START: ai-guardian-Frontend\src\components\admin\RealTimeProtection.tsx
+--------------------
+import React, { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
+import { ShieldAlert, ShieldCheck, Mail, AlertTriangle, ExternalLink, RefreshCw } from 'lucide-react';
+
+interface Threat {
+  id: int;
+  sender: string;
+  subject: string;
+  risk_score: number;
+  threat_type: string;
+  detected_at: string;
+  status: string;
+}
+
+export const RealTimeProtection: React.FC = () => {
+  const [threats, setThreats] = useState<Threat[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchThreats = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/threats/`);
+      if (response.ok) {
+        const data = await response.json();
+        setThreats(data);
+      }
+    } catch (err) {
+      console.error("Erreur lors de la récupération des menaces réelles", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchThreats();
+    const interval = setInterval(fetchThreats, 30000); // Rafraîchissement toutes les 30s
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="bg-white dark:bg-slate-900 rounded-[40px] p-10 shadow-sm border border-slate-100 dark:border-slate-800">
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-rose-50 dark:bg-rose-900/20 text-rose-600 rounded-2xl flex items-center justify-center shadow-lg shadow-rose-200/50">
+            <ShieldAlert size={24} />
+          </div>
+          <div>
+            <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white leading-none">Bouclier Temps Réel</h2>
+            <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-1">Surveillance IMAP Active</p>
+          </div>
+        </div>
+        <button 
+          onClick={fetchThreats} 
+          className="p-3 bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-brand-600 rounded-xl transition-all"
+          title="Rafraîchir"
+        >
+          <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        {threats.length === 0 ? (
+          <div className="py-12 text-center border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-3xl">
+            <ShieldCheck size={48} className="mx-auto text-emerald-500 mb-4 opacity-50" />
+            <p className="text-slate-500 font-bold">Aucune menace réelle détectée pour le moment.</p>
+            <p className="text-xs text-slate-400 mt-1">Votre infrastructure est sécurisée.</p>
+          </div>
+        ) : (
+          threats.map((threat, index) => (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+              key={threat.id}
+              className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-rose-200 dark:hover:border-rose-900 transition-all"
+            >
+              <div className="flex items-center gap-5">
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${
+                  threat.risk_score > 0.8 ? 'bg-rose-100 text-rose-600' : 'bg-orange-100 text-orange-600'
+                }`}>
+                  <AlertTriangle size={28} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 dark:text-white mb-1">{threat.subject}</h3>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-slate-500 flex items-center gap-1">
+                      <Mail size={14} /> {threat.sender}
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 bg-white dark:bg-slate-800 rounded-md border border-slate-100 dark:border-slate-700 text-slate-400">
+                      {new Date(threat.detected_at).toLocaleTimeString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-8">
+                <div className="text-right">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">Score de Risque</div>
+                  <div className={`text-xl font-black ${
+                    threat.risk_score > 0.8 ? 'text-rose-600' : 'text-orange-600'
+                  }`}>
+                    {(threat.risk_score * 100).toFixed(0)}%
+                  </div>
+                </div>
+                <div className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest ${
+                  threat.status === 'blocked' ? 'bg-slate-900 text-white' : 'bg-rose-600 text-white'
+                }`}>
+                  {threat.status}
+                </div>
+              </div>
+            </motion.div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
+
+--------------------
+FILE_END: ai-guardian-Frontend\src\components\admin\RealTimeProtection.tsx
 
 FILE_START: ai-guardian-Frontend\src\components\admin\ReportExportButton.tsx
 --------------------
@@ -15436,15 +16107,19 @@ export const SimulationResultsModal: React.FC<SimulationResultsModalProps> = ({ 
                                 <p className="text-sm font-bold text-slate-400">Personne n'a cliqué. Bravo !</p>
                             </div>
                         ) : (
-                            stats.filter(s => s.has_clicked).map((s, i) => (
+                            stats.filter(s => s.has_clicked).map((target, i) => (
                                 <div key={i} className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 bg-red-100 dark:bg-red-900/40 text-red-600 rounded-xl flex items-center justify-center font-black">
-                                            {s.user_id}
+                                        <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center font-bold">
+                                            {target.user_name ? target.user_name.charAt(0) : target.user_id}
                                         </div>
                                         <div>
-                                            <p className="text-sm font-bold text-slate-900 dark:text-white">ID Utilisateur : {s.user_id}</p>
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">A cliqué à {new Date(s.clicked_at).toLocaleTimeString()}</p>
+                                            <div className="font-bold text-slate-900 dark:text-white">
+                                              {target.user_name || `Utilisateur #${target.user_id}`}
+                                            </div>
+                                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                              {target.clicked_at ? `A cliqué à ${new Date(target.clicked_at).toLocaleTimeString()}` : 'A cliqué'}
+                                            </div>
                                         </div>
                                     </div>
                                     <AlertTriangle className="text-red-500" size={18} />
@@ -16071,8 +16746,9 @@ FILE_START: ai-guardian-Frontend\src\pages\AdminDashboard.tsx
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import {
-  Settings, Play, Zap, History, Plus, BarChart3, Trash2, Mail, Smartphone
+  Settings, Play, Zap, History, Plus, BarChart3, Trash2, Mail, Smartphone, RefreshCw
 } from 'lucide-react';
+import { RealTimeProtection } from '../components/admin/RealTimeProtection';
 import { userService, departmentService, simulationService, settingsService } from '../services/api';
 
 // Sub-components
@@ -16320,15 +16996,20 @@ export const AdminDashboard: React.FC = () => {
             deptName = 'Informatique';
           }
           
+          const vScore = Math.floor(Math.random() * 50) + 50;
+          let userStatus: 'active' | 'warning' | 'critical' = 'active';
+          if (vScore < 60) userStatus = 'critical';
+          else if (vScore < 75) userStatus = 'warning';
+
           return {
             id: String(u.id),
             firstName: u.prenoms,
             lastName: u.nom,
             email: u.email,
             department: deptName,
-            vigilanceScore: Math.floor(Math.random() * 50) + 50,
+            vigilanceScore: vScore,
             lastTest: new Date().toISOString().split('T')[0],
-            status: 'active'
+            status: userStatus
           };
         });
         setStaff(mappedUsers);
@@ -16337,9 +17018,15 @@ export const AdminDashboard: React.FC = () => {
       }
     }
     if (!loadingDepts) {
-      fetchUsers();
+      fetchUsers().then(() => {
+        // Une fois les utilisateurs chargés, on met à jour le staffCount réel des départements
+        setDepartments(prevDepts => prevDepts.map(dept => {
+          const actualCount = staff.filter(s => s.department === dept.name).length;
+          return { ...dept, staffCount: actualCount || dept.staffCount };
+        }));
+      });
     }
-  }, [departments, loadingDepts]);
+  }, [departments.length, loadingDepts]); // On surveille le nombre de départements
 
   const handleResetData = async () => {
     try {
@@ -16375,7 +17062,7 @@ export const AdminDashboard: React.FC = () => {
             try {
               await departmentService.create({
                 name,
-                staff_count: Math.floor(Math.random() * 50) + 10,
+                staff_count: 0,
                 description: `Département ${name}`,
                 priority: 'normal'
               });
@@ -16469,7 +17156,7 @@ export const AdminDashboard: React.FC = () => {
     try {
       const added = await departmentService.create({
         name: newDept.name.trim(),
-        staff_count: newDept.staffCount || 0,
+        staff_count: 0,
         description: newDept.description.trim(),
         priority: newDept.priority
       });
@@ -16477,7 +17164,7 @@ export const AdminDashboard: React.FC = () => {
       setDepartments([...departments, {
         id: String(added.id),
         name: added.name,
-        staffCount: added.staff_count,
+        staffCount: 0,
         avgVigilance: added.avg_vigilance,
         priority: added.priority as any,
         points: 0,
@@ -16578,6 +17265,24 @@ export const AdminDashboard: React.FC = () => {
     setShowResultsModal(true);
   };
 
+  const handleSyncGophish = async () => {
+    setIsLaunching(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/simulations/sync`);
+      if (response.ok) {
+        await fetchDepts();
+        await fetchUsers();
+        await fetchSimulations();
+        setNotification({ message: "Synchronisation Gophish terminée !", type: 'success' });
+      }
+    } catch (err) {
+      setNotification({ message: "Erreur de synchronisation", type: 'error' });
+    } finally {
+      setIsLaunching(false);
+      setTimeout(() => setNotification(null), 3000);
+    }
+  };
+
   return (
     <div className="container mx-auto px-6 py-12 max-w-7xl">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12">
@@ -16586,7 +17291,7 @@ export const AdminDashboard: React.FC = () => {
             {companyInfo.logo_url ? (
               <img src={companyInfo.logo_url} alt="Logo" className="max-w-full max-h-full object-contain" onError={(e) => (e.currentTarget.src = '/logo.png')} />
             ) : (
-              <img src="/logo.png" alt="Logo" className="w-full h-full object-cover rounded-xl" />
+              <img src="/logo.png?v=2" alt="Logo" className="w-full h-full object-cover rounded-xl" />
             )}
           </div>
           <div>
@@ -16595,13 +17300,34 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <ReportExportButton departments={departments} globalVigilance={74.5} />
+          <ReportExportButton 
+            departments={departments} 
+            globalVigilance={
+              departments.length > 0 
+                ? Number((departments.reduce((acc, d) => acc + (d.avgVigilance || 0), 0) / departments.length).toFixed(1))
+                : 100
+            } 
+          />
+          <button onClick={handleSyncGophish} disabled={isLaunching} className="p-3 bg-white dark:bg-slate-800 border border-slate-200 rounded-2xl text-slate-400 hover:bg-slate-50 transition-colors" title="Synchroniser Gophish">
+            <RefreshCw size={20} className={isLaunching ? 'animate-spin' : ''} />
+          </button>
           <button onClick={() => setShowCompanySettings(true)} className="px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-brand-600 font-bold flex items-center gap-2 hover:border-brand-500 transition-colors">
             <Settings size={18} /> <span className="hidden sm:inline">Personnaliser</span>
           </button>
           <button onClick={() => setShowResetConfirm(true)} className="p-3 bg-white dark:bg-slate-800 border border-red-200 rounded-2xl text-red-500 hover:bg-red-50 transition-colors"><History size={20} /></button>
-          <button onClick={() => setCompanyInfo({ ...companyInfo, isConfigured: false })} className="p-3 bg-white dark:bg-slate-800 border border-slate-200 rounded-2xl text-slate-400 hover:bg-slate-50 transition-colors"><Settings size={20} /></button>
-          <button onClick={() => handleLaunchCampaign()} disabled={isLaunching} className="hidden lg:flex items-center gap-2 px-6 py-3 bg-brand-600 text-white rounded-2xl font-bold disabled:opacity-50 hover:bg-brand-700 transition-colors"><Zap size={18} fill="currentColor" />{isLaunching ? 'Lancement...' : 'Simulation'}</button>
+          
+          {/* BOUTON SYNC ORANGE - TRÈS VISIBLE */}
+          <button 
+            onClick={handleSyncGophish} 
+            disabled={isLaunching} 
+            className="flex items-center gap-2 px-4 py-3 bg-orange-500 text-white rounded-2xl font-bold hover:bg-orange-600 transition-colors shadow-lg shadow-orange-200"
+            title="Synchroniser les clics depuis Gophish"
+          >
+            <RefreshCw size={18} className={isLaunching ? 'animate-spin' : ''} />
+            <span className="hidden xl:inline">{isLaunching ? 'Sync...' : 'Actualiser Stats'}</span>
+          </button>
+
+          <button onClick={() => handleLaunchCampaign()} disabled={isLaunching} className="hidden lg:flex items-center gap-2 px-6 py-3 bg-brand-600 text-white rounded-2xl font-bold disabled:opacity-50 hover:bg-brand-700 transition-colors shadow-lg shadow-brand-200"><Zap size={18} fill="currentColor" />{isLaunching ? 'Lancement...' : 'Simulation'}</button>
         </div>
       </div>
 
@@ -16610,8 +17336,12 @@ export const AdminDashboard: React.FC = () => {
       <AdminStatsCards
         deptCount={departments.length}
         staffCount={staff.length}
-        avgScore="74.5%"
-        alertCount="12"
+        avgScore={
+          departments.length > 0
+            ? (departments.reduce((acc, d) => acc + (d.avgVigilance || 0), 0) / departments.length).toFixed(1) + '%'
+            : '0%'
+        }
+        alertCount={String(staff.filter(s => s.status === 'critical').length)}
         onShowDepts={() => setShowDeptDetails(true)}
         onShowStaff={() => setShowStaffList(true)}
         onShowAlerts={() => setShowCriticalAlerts(true)}
@@ -16653,7 +17383,10 @@ export const AdminDashboard: React.FC = () => {
                 <p className="text-slate-400 font-bold">Aucune équipe définie.</p>
               </div>
             ) : (
-              departments.map(dept => <DepartmentCard key={dept.id} dept={dept} onDelete={handleDeleteDepartment} onLaunch={handleLaunchCampaign} />)
+              departments.map(dept => {
+                const actualCount = staff.filter(s => s.department === dept.name).length;
+                return <DepartmentCard key={dept.id} dept={{...dept, staffCount: actualCount}} onDelete={handleDeleteDepartment} onLaunch={handleLaunchCampaign} />;
+              })
             )}
           </div>
         </div>
@@ -17562,7 +18295,7 @@ export const AuthPage: React.FC = () => {
         <div className="bg-white dark:bg-slate-900 p-10 md:p-12 rounded-[40px] shadow-2xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800">
           <div className="text-center mb-10">
             <div className="w-20 h-20 bg-brand-600 text-white rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-brand-200 rotate-3 overflow-hidden">
-              <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              <img src="/logo.png?v=2" alt="Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
             </div>
             <h2 className="text-4xl font-extrabold text-slate-900 dark:text-white mb-3">
               {mode === 'login' ? 'Bon retour !' : 'Créer un compte'}
@@ -18556,7 +19289,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onLogin, onDo
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-brand-600 text-white rounded-lg flex items-center justify-center overflow-hidden">
                 <img 
-                  src="./logo.png" 
+                  src="/logo.png?v=2" 
                   alt="Logo" 
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
