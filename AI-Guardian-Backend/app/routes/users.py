@@ -8,6 +8,19 @@ from app.database import get_db
 from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse
 from app.core.security import hash_password
+import re
+
+def validate_password(password: str):
+    if len(password) < 8:
+        raise HTTPException(status_code=400, detail="Le mot de passe doit contenir au moins 8 caractères.")
+    if not re.search(r"[A-Z]", password):
+        raise HTTPException(status_code=400, detail="Le mot de passe doit contenir au moins une majuscule.")
+    if not re.search(r"[a-z]", password):
+        raise HTTPException(status_code=400, detail="Le mot de passe doit contenir au moins une minuscule.")
+    if not re.search(r"\d", password):
+        raise HTTPException(status_code=400, detail="Le mot de passe doit contenir au moins un chiffre.")
+    if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+        raise HTTPException(status_code=400, detail="Le mot de passe doit contenir au moins un caractère spécial.")
 
 
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -15,6 +28,8 @@ router = APIRouter(prefix="/users", tags=["Users"])
 
 @router.post("/", response_model=UserResponse)
 async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
+    validate_password(user.mot_de_passe)
+    
     result = await db.execute(select(User).where(User.email == user.email))
     existing_user = result.scalars().first()
     if existing_user:
@@ -77,7 +92,9 @@ async def update_me(user_update: UserUpdate, current_user: User = Depends(get_cu
     if user_update.prenoms:
         current_user.prenoms = user_update.prenoms
     if user_update.mot_de_passe:
+        validate_password(user_update.mot_de_passe)
         current_user.mot_de_passe = hash_password(user_update.mot_de_passe)
+        current_user.requires_password_change = False
     
     await db.commit()
     await db.refresh(current_user)

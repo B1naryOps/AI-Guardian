@@ -166,9 +166,12 @@ export const AdminDashboard: React.FC = () => {
     let reconnectTimeout: any;
 
     const connectWS = () => {
-      ws = new WebSocket('ws://localhost:8000/ws/simulations');
+      import('../../services/apiClient').then(({ default: client }) => {
+        const baseUrl = client.defaults.baseURL || 'http://localhost:8000';
+        const wsUrl = baseUrl.replace(/^http/, 'ws') + '/ws/simulations';
+        ws = new WebSocket(wsUrl);
       
-      ws.onmessage = (event) => {
+        ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
         if (data.type === 'SIMULATION_UPDATE') {
           setSimulations(prev => prev.map(sim => 
@@ -374,14 +377,11 @@ export const AdminDashboard: React.FC = () => {
   const handleSimulateThreat = async (threat: ThreatAlert) => {
     setNotification({ message: "Création du modèle Gophish en cours...", type: 'success' });
     try {
-      await fetch('http://localhost:8000/simulations/threat-template', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: threat.templateName,
-          subject: threat.title,
-          html_content: `<html><body><p>${threat.description}</p><p><a href="{{.URL}}">Cliquez ici pour vérifier</a></p></body></html>`
-        })
+      const { default: client } = await import('../../services/apiClient');
+      await client.post('/simulations/threat-template', {
+        name: threat.templateName,
+        subject: threat.title,
+        html_content: `<html><body><p>${threat.description}</p><p><a href="{{.URL}}">Cliquez ici pour vérifier</a></p></body></html>`
       });
     } catch (e) {
       console.error("Erreur lors de la création du modèle:", e);

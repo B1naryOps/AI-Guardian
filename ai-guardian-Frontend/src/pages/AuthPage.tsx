@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, ArrowRight, CheckCircle2, UserCircle } from 'lucide-react';
+import { Mail, Lock, ArrowRight, CheckCircle2, UserCircle, ShieldAlert } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -26,12 +26,25 @@ export const AuthPage: React.FC = () => {
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [error, setError] = useState('');
 
+  // Password validation states
+  const hasMinLength = password.length >= 8;
+  const hasUpper = /[A-Z]/.test(password);
+  const hasLower = /[a-z]/.test(password);
+  const hasNumber = /\d/.test(password);
+  const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+  const isPasswordValid = hasMinLength && hasUpper && hasLower && hasNumber && hasSpecial;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
     if (mode === 'register') {
+      if (!isPasswordValid) {
+        setError("Le mot de passe ne respecte pas les critères de sécurité.");
+        setIsLoading(false);
+        return;
+      }
       if (password !== confirmPassword) {
         setError("Les mots de passe ne correspondent pas.");
         setIsLoading(false);
@@ -272,6 +285,26 @@ export const AuthPage: React.FC = () => {
                       className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium dark:text-white"
                       placeholder="••••••••"
                     />
+                  </div>
+                </div>
+              )}
+
+              {mode === 'register' && (
+                <div className="md:col-span-2 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <div className={`flex items-center gap-2 text-xs font-semibold ${hasMinLength ? 'text-emerald-500' : 'text-slate-400'}`}>
+                    {hasMinLength ? <CheckCircle2 size={14} /> : <div className="w-3.5 h-3.5 rounded-full border border-slate-300 dark:border-slate-600" />} Au moins 8 caractères
+                  </div>
+                  <div className={`flex items-center gap-2 text-xs font-semibold ${hasUpper ? 'text-emerald-500' : 'text-slate-400'}`}>
+                    {hasUpper ? <CheckCircle2 size={14} /> : <div className="w-3.5 h-3.5 rounded-full border border-slate-300 dark:border-slate-600" />} Au moins une majuscule
+                  </div>
+                  <div className={`flex items-center gap-2 text-xs font-semibold ${hasLower ? 'text-emerald-500' : 'text-slate-400'}`}>
+                    {hasLower ? <CheckCircle2 size={14} /> : <div className="w-3.5 h-3.5 rounded-full border border-slate-300 dark:border-slate-600" />} Au moins une minuscule
+                  </div>
+                  <div className={`flex items-center gap-2 text-xs font-semibold ${hasNumber ? 'text-emerald-500' : 'text-slate-400'}`}>
+                    {hasNumber ? <CheckCircle2 size={14} /> : <div className="w-3.5 h-3.5 rounded-full border border-slate-300 dark:border-slate-600" />} Au moins un chiffre
+                  </div>
+                  <div className={`flex items-center gap-2 text-xs font-semibold ${hasSpecial ? 'text-emerald-500' : 'text-slate-400'}`}>
+                    {hasSpecial ? <CheckCircle2 size={14} /> : <div className="w-3.5 h-3.5 rounded-full border border-slate-300 dark:border-slate-600" />} Au moins un caractère spécial
                   </div>
                 </div>
               )}

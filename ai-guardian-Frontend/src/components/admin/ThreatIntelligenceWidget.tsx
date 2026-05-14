@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldAlert, ChevronRight, Activity, Globe } from 'lucide-react';
 import { motion } from 'motion/react';
+import apiClient from '../../services/apiClient';
 
 export interface ThreatAlert {
   id: string;
@@ -24,11 +25,8 @@ export const ThreatIntelligenceWidget: React.FC<ThreatIntelligenceWidgetProps> =
   useEffect(() => {
     const fetchThreats = async () => {
       try {
-        const response = await fetch('http://localhost:8000/threats/intelligence');
-        if (response.ok) {
-          const data = await response.json();
-          setThreats(data);
-        }
+        const response = await apiClient.get('/threats/intelligence');
+        setThreats(response.data);
       } catch (err) {
         console.error("Erreur de récupération des menaces", err);
       }

@@ -12,6 +12,7 @@ import { DocumentationPage } from './pages/DocumentationPage';
 import { TrainingPage } from './pages/TrainingPage';
 import { Navbar } from './components/Navbar';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { ForcePasswordChangeModal } from './components/auth/ForcePasswordChangeModal';
 
 function AppContent() {
   const { isAuthenticated, user, logout } = useAuth();
@@ -60,6 +61,13 @@ function AppContent() {
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        
+        {isAuthenticated && user?.requires_password_change && (
+          <ForcePasswordChangeModal 
+            isOpen={true} 
+            onSuccess={() => window.location.reload()} 
+          />
+        )}
       </main>
     </div>
   );

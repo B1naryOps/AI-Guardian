@@ -3,7 +3,8 @@ import { motion } from 'motion/react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { AlertTriangle, CheckCircle2, TrendingUp, History, Zap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { analysisService, userService } from '../services/api';
+import { analysisService, userService, settingsService } from '../services/api';
+import apiClient from '../services/apiClient';
 import { PassportWidget } from '../components/admin/PassportWidget';
 import { useCompanySettings } from '../hooks/useCompanySettings';
 
@@ -73,17 +74,9 @@ export const Dashboard: React.FC = () => {
       if (profileForm.prenoms) payload.prenoms = profileForm.prenoms;
       if (profileForm.mot_de_passe) payload.mot_de_passe = profileForm.mot_de_passe;
 
-      const response = await fetch('http://localhost:8000/users/me', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
-      if (response.ok) {
-        const updated = await response.json();
-        setDbUser(updated);
+      const response = await apiClient.patch('/users/me', payload);
+      if (response.status === 200) {
+        setDbUser(response.data);
         setShowProfileModal(false);
       }
     } catch (e) {

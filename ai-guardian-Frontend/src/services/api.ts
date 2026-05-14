@@ -128,6 +128,16 @@ export const settingsService = {
     const response = await apiClient.patch('/settings/', payload);
     return response.data;
   },
+  async uploadLogo(file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post('/settings/upload-logo', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
 };
 
 // ─── Remediation ────────────────────────────────────────────────────────────

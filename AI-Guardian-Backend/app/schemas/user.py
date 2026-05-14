@@ -22,3 +22,4 @@ class UserResponse(BaseModel):
     xp: Optional[int] = 0
     level: Optional[str] = "Novice"
     vigilance_score: Optional[float] = 100.0
+    requires_password_change: Optional[bool] = False

@@ -21,13 +21,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     if (savedToken && savedUser) {
       try {
-        // Decode JWT payload (base64url)
-        const payloadBase64 = savedToken.split('.')[1];
+        const payloadBase64 = savedToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
         const decodedPayload = JSON.parse(atob(payloadBase64));
         const exp = decodedPayload.exp;
         
         if (exp && Date.now() >= exp * 1000) {
-          // Token expired
           localStorage.removeItem('token');
           localStorage.removeItem('user');
         } else {
@@ -46,7 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     const interval = setInterval(() => {
       try {
-        const payloadBase64 = token.split('.')[1];
+        const payloadBase64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
         const decodedPayload = JSON.parse(atob(payloadBase64));
         const exp = decodedPayload.exp;
         

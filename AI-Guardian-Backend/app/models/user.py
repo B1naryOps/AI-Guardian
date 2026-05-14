@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Float
+from sqlalchemy import Column, Integer, String, ForeignKey, Float, Boolean
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -15,5 +15,6 @@ class User(Base):
     xp = Column(Integer, default=0)
     level = Column(String, default="Novice")
     vigilance_score = Column(Float, default=100.0)
+    requires_password_change = Column(Boolean, default=False)
 
     department = relationship("Department", back_populates="users")
