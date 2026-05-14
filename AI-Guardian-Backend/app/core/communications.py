@@ -82,8 +82,20 @@ def create_gophish_campaign(simulation_name: str, targets: list, template_name: 
         # 4. Vérifier les Landing Pages
         pages = api.pages.get()
         if not pages:
-            print("[GOPHISH] ERREUR : Aucune 'Landing Page' trouvée. Créez-en une dans Gophish !")
-            return None
+            print("[GOPHISH] Aucune 'Landing Page' trouvée. Création automatique d'une page par défaut...")
+            try:
+                default_page = Page(
+                    name="Default_AI_Guardian_Landing",
+                    html="<html><body><h1>Accès Interdit</h1><p>Ceci était une simulation de phishing par AI-Guardian.</p></body></html>",
+                    capture_credentials=False,
+                    capture_passwords=False
+                )
+                api.pages.post(default_page)
+                pages = api.pages.get()
+            except Exception as e:
+                print(f"[GOPHISH] ERREUR lors de la création de la Landing Page : {e}")
+                return None
+            
         p_name = pages[0].name
 
         # 5. Créer et lancer la campagne
