@@ -111,7 +111,7 @@ async def create_simulation(sim: SimulationCreate, background_tasks: BackgroundT
     if sim.channel == "email":
         from app.core.communications import create_gophish_campaign
         g_targets = [{"first_name": t['first_name'], "last_name": t['last_name'], "email": t['email']} for t in simulation_targets_data]
-        create_gophish_campaign(db_sim.name, g_targets, db_sim.template or "Default")
+        create_gophish_campaign(db_sim.name, g_targets, db_sim.template or "Default", db_sim.sending_profile)
     
     # On lance les tâches de fond avec les données extraites
     for target_data in simulation_targets_data:

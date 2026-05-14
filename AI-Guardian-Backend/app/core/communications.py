@@ -2,7 +2,7 @@ import asyncio
 import os
 from datetime import datetime
 from gophish import Gophish
-from gophish.models import Campaign, Template, Group, User as GophishUser, SMTP
+from gophish.models import Campaign, Template, Group, User as GophishUser, SMTP, Page
 from app.models.simulation import Simulation
 from app.models.simulation_target import SimulationTarget
 from app.models.user import User
@@ -42,9 +42,94 @@ async def send_simulation_message(email: str, simulation_name: str, channel: str
     # Pour l'email via Gophish
     print(f"[GOPHISH] Campagne en cours pour {email}")
 
+def get_template_content(template_name: str):
+    """
+    Retourne le contenu HTML premium correspondant au nom du template.
+    """
+    templates = {
+        "Microsoft 365 Login": {
+            "subject": "Alerte de sécurité de votre compte Microsoft 365",
+            "html": """
+<div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #334155; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px; max-width: 600px; background-color: #ffffff;">
+    <div style="display: flex; align-items: center; margin-bottom: 16px;">
+        <div style="width: 32px; height: 32px; background-color: #E81123; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; margin-right: 10px;">M</div>
+        <span style="font-weight: 600; font-size: 18px; color: #475569;">Microsoft 365</span>
+    </div>
+    <p style="font-weight: bold; font-size: 16px; margin-bottom: 12px; color: #1e293b;">Alerte de sécurité de votre compte</p>
+    <p style="margin-bottom: 20px; line-height: 1.5;">Nous avons détecté une activité de connexion inhabituelle sur votre compte. Veuillez vérifier votre activité récente immédiatement pour éviter un blocage de l'accès.</p>
+    <a href="{{.URL}}" style="display: inline-block; background-color: #0078D4; color: white; padding: 12px 24px; font-weight: 600; text-decoration: none; border-radius: 4px;">Vérifier l'activité</a>
+    <p style="margin-top: 24px; font-size: 12px; color: #94a3b8; border-top: 1px solid #f1f5f9; pt: 12px;">Ceci est un message automatique de sécurité. Merci de ne pas y répondre.</p>
+</div>
+            """
+        },
+        "Facture Urgente": {
+            "subject": "URGENT : Facture impayée #9482",
+            "html": """
+<div style="font-family: sans-serif; color: #334155; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px; max-width: 600px; background-color: #ffffff;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 20px;">
+        <span style="font-weight: bold; font-size: 18px; color: #64748b;">INVOICE #9482</span>
+        <span style="background-color: #fef2f2; color: #ef4444; font-weight: bold; padding: 4px 12px; border-radius: 4px; font-size: 12px;">URGENT</span>
+    </div>
+    <p style="margin-bottom: 12px;">Veuillez trouver ci-joint la facture pour les services du mois en cours.</p>
+    <p style="margin-bottom: 20px; font-weight: 600; color: #dc2626;">Le paiement est attendu sous 24h pour éviter une suspension de vos services.</p>
+    <div style="border: 1px solid #e2e8f0; padding: 16px; border-radius: 8px; display: flex; align-items: center; background-color: #f8fafc;">
+        <div style="margin-right: 12px; color: #3b82f6;">📄</div>
+        <a href="{{.URL}}" style="font-weight: 600; color: #2563eb; text-decoration: underline;">Facture_Avril.pdf</a>
+    </div>
+</div>
+            """
+        },
+        "Mise à jour RH": {
+            "subject": "Action requise : Mise à jour de vos informations RH",
+            "html": """
+<div style="font-family: sans-serif; color: #334155; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px; max-width: 600px; background-color: #ffffff;">
+    <div style="display: flex; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+        <div style="width: 40px; height: 40px; background-color: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: bold; margin-right: 12px;">RH</div>
+        <span style="font-weight: bold; font-size: 18px; color: #334155;">Ressources Humaines</span>
+    </div>
+    <p style="font-weight: bold; font-size: 16px; margin-bottom: 12px;">Mise à jour obligatoire de vos informations</p>
+    <p style="margin-bottom: 20px; line-height: 1.5;">Conformément à la nouvelle politique de l'entreprise, merci de valider vos informations de paie avant la fin de la semaine.</p>
+    <a href="{{.URL}}" style="display: inline-block; background-color: #059669; color: white; padding: 12px 24px; font-weight: 600; text-decoration: none; border-radius: 8px;">Portail RH</a>
+</div>
+            """
+        },
+        "Alerte Sécurité Compte": {
+            "subject": "Alerte de Sécurité : Activité suspecte détectée",
+            "html": """
+<div style="font-family: sans-serif; color: #334155; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px; max-width: 600px; background-color: #ffffff;">
+    <div style="display: flex; align-items: center; margin-bottom: 16px;">
+        <div style="font-size: 24px; margin-right: 12px;">⚠️</div>
+        <span style="font-weight: bold; font-size: 18px; color: #334155;">Alerte de Sécurité</span>
+    </div>
+    <p style="font-weight: bold; font-size: 16px; margin-bottom: 12px;">Activité suspecte détectée</p>
+    <p style="margin-bottom: 20px; line-height: 1.5;">Une connexion depuis une adresse IP inconnue a été bloquée. Veuillez confirmer votre identité pour sécuriser votre compte.</p>
+    <a href="{{.URL}}" style="display: inline-block; background-color: #1e293b; color: white; padding: 12px 24px; font-weight: 600; text-decoration: none; border-radius: 8px;">Sécuriser mon compte</a>
+</div>
+            """
+        },
+        "Invitation Réunion Teams": {
+            "subject": "Invitation : Point d'équipe exceptionnel",
+            "html": """
+<div style="font-family: sans-serif; color: #334155; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px; max-width: 600px; background-color: #ffffff;">
+    <div style="display: flex; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+        <div style="width: 32px; height: 32px; background-color: #5059C9; color: white; display: flex; align-items: center; justify-content: center; border-radius: 4px; font-weight: bold; font-size: 14px; margin-right: 10px;">T</div>
+        <span style="font-weight: bold; font-size: 18px; color: #334155;">Microsoft Teams</span>
+    </div>
+    <p style="font-weight: bold; font-size: 16px; margin-bottom: 12px;">Vous avez été invité à une réunion</p>
+    <p style="color: #64748b; margin-bottom: 20px; line-height: 1.5;">Sujet : Point d'équipe exceptionnel<br>Heure : Aujourd'hui à 14:00</p>
+    <a href="{{.URL}}" style="display: inline-block; background-color: #5059C9; color: white; padding: 12px 24px; font-weight: 600; text-decoration: none; border-radius: 8px;">Rejoindre la réunion</a>
+</div>
+            """
+        }
+    }
+    return templates.get(template_name, {
+        "subject": f"Simulation de sécurité : {template_name}",
+        "html": f"<html><body><h2>Alerte Sécurité</h2><p>Ceci est une simulation d'attaque par AI-Guardian.</p><p><a href=\"{{.URL}}\">Lien d'accès</a></p></body></html>"
+    })
+
 import time
 
-def create_gophish_campaign(simulation_name: str, targets: list, template_name: str):
+def create_gophish_campaign(simulation_name: str, targets: list, template_name: str, sending_profile_name: str = None):
     """
     Crée un groupe et une campagne dans Gophish avec vérifications de sécurité.
     """
@@ -58,7 +143,6 @@ def create_gophish_campaign(simulation_name: str, targets: list, template_name: 
         return None
 
     try:
-        from gophish.models import Page
         # 1. Créer le groupe de cibles
         g_targets = [GophishUser(first_name=t['first_name'], last_name=t['last_name'], email=t['email']) for t in targets]
         # On ajoute un timestamp pour éviter les collisions de noms de groupes
@@ -70,7 +154,16 @@ def create_gophish_campaign(simulation_name: str, targets: list, template_name: 
         if not smtp_profiles:
             print("[GOPHISH] ERREUR : Aucun 'Sending Profile' trouvé. Créez-en un dans Gophish !")
             return None
+        
+        # Essayer de trouver un profil qui correspond au nom demandé (ex: "IT Support")
         smtp_name = smtp_profiles[0].name
+        if sending_profile_name:
+            # On cherche une correspondance partielle (ex: "IT Support" dans "IT Support (support@company.com)")
+            clean_name = sending_profile_name.split('(')[0].strip()
+            for p in smtp_profiles:
+                if clean_name.lower() in p.name.lower():
+                    smtp_name = p.name
+                    break
 
         # 3. Vérifier les Templates
         templates = api.templates.get()
@@ -83,12 +176,12 @@ def create_gophish_campaign(simulation_name: str, targets: list, template_name: 
         if not t_name:
             print(f"[GOPHISH] Template '{template_name}' introuvable. Création automatique...")
             try:
-                from gophish.models import Template
+                content = get_template_content(template_name)
                 new_template = Template(
                     name=template_name,
-                    subject=f"Simulation de sécurité : {template_name}",
-                    text="Ceci est une simulation de phishing par AI-Guardian. Ne cliquez pas sur les liens suspects. {{.URL}}",
-                    html="<html><body><h2>Alerte Sécurité</h2><p>Ceci est une simulation d'attaque par AI-Guardian.</p><p><a href=\"{{.URL}}\">Lien d'accès</a></p></body></html>"
+                    subject=content["subject"],
+                    html=content["html"],
+                    text="Ceci est une simulation de phishing par AI-Guardian. Ne cliquez pas sur les liens suspects. {{.URL}}"
                 )
                 api.templates.post(new_template)
                 t_name = template_name
@@ -119,13 +212,16 @@ def create_gophish_campaign(simulation_name: str, targets: list, template_name: 
         p_name = pages[0].name
 
         # 5. Créer et lancer la campagne
+        # On utilise une URL configurable via .env
+        campaign_url = os.getenv("GOPHISH_CAMPAIGN_URL", "http://localhost:8080")
+        
         campaign = api.campaigns.post(Campaign(
             name=f"{simulation_name}_{int(time.time())}",
             groups=[Group(name=group.name)],
             template=Template(name=t_name),
             smtp=SMTP(name=smtp_name),
             page=Page(name=p_name),
-            url="http://192.168.111.128:8080",
+            url=campaign_url,
         ))
         print(f"[GOPHISH] Campagne '{campaign.name}' lancée avec succès.")
         return campaign
