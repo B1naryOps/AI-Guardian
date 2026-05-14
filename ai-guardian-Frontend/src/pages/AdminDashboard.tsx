@@ -185,6 +185,7 @@ export const AdminDashboard: React.FC = () => {
       ws.onclose = () => {
         reconnectTimeout = setTimeout(connectWS, 3000);
       };
+      });
     };
 
     connectWS();
