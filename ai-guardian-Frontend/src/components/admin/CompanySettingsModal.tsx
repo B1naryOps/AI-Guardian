@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { LayoutDashboard, Image as ImageIcon, Save, GripVertical } from 'lucide-react';
 import { settingsService } from '../../services/api';
+import apiClient from '../../services/apiClient';
 
 interface CompanySettingsModalProps {
   isOpen: boolean;
@@ -59,9 +60,7 @@ export const CompanySettingsModal: React.FC<CompanySettingsModalProps> = ({
       try {
         const data = await settingsService.uploadLogo(file);
         if (data.logo_url) {
-          import('../../services/apiClient').then(({ default: client }) => {
-            setLogoUrl((client.defaults.baseURL || '') + data.logo_url);
-          });
+          setLogoUrl((apiClient.defaults.baseURL || '') + data.logo_url);
         }
       } catch (err) {
         console.error("Erreur d'upload du logo:", err);

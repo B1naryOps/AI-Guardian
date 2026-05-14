@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { RealTimeProtection } from '../components/admin/RealTimeProtection';
 import { userService, departmentService, simulationService, settingsService } from '../services/api';
+import apiClient from '../services/apiClient';
 
 // Sub-components
 import { AdminStatsCards } from '../components/admin/AdminStatsCards';
@@ -166,8 +167,7 @@ export const AdminDashboard: React.FC = () => {
     let reconnectTimeout: any;
 
     const connectWS = () => {
-      import('../services/apiClient').then(({ default: client }) => {
-        const baseUrl = client.defaults.baseURL || 'http://localhost:8000';
+        const baseUrl = apiClient.defaults.baseURL || 'http://localhost:8000';
         const wsUrl = baseUrl.replace(/^http/, 'ws') + '/ws/simulations';
         ws = new WebSocket(wsUrl);
       
@@ -185,7 +185,6 @@ export const AdminDashboard: React.FC = () => {
       ws.onclose = () => {
         reconnectTimeout = setTimeout(connectWS, 3000);
       };
-      });
     };
 
     connectWS();
@@ -378,8 +377,7 @@ export const AdminDashboard: React.FC = () => {
   const handleSimulateThreat = async (threat: ThreatAlert) => {
     setNotification({ message: "Création du modèle Gophish en cours...", type: 'success' });
     try {
-      const { default: client } = await import('../services/apiClient');
-      await client.post('/simulations/threat-template', {
+      await apiClient.post('/simulations/threat-template', {
         name: threat.templateName,
         subject: threat.title,
         html_content: `<html><body><p>${threat.description}</p><p><a href="{{.URL}}">Cliquez ici pour vérifier</a></p></body></html>`

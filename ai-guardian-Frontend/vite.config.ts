@@ -19,5 +19,8 @@ export default defineConfig(({ mode }) => {
       hmr: process.env.DISABLE_HMR !== 'true',
       // Proxy removed: Backend supports CORS and API_BASE_URL points directly to it.
     },
+    build: {
+      chunkSizeWarningLimit: 2000,
+    },
   };
 });
