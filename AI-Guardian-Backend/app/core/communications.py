@@ -229,7 +229,7 @@ def create_gophish_campaign(simulation_name: str, targets: list, template_name: 
         campaign = api.campaigns.post(Campaign(
             name=f"{simulation_name}_{int(time.time())}",
             groups=[Group(name=group.name)],
-            template=Template(name=t_name),
+            template=Template(name=template_name),
             smtp=SMTP(name=smtp_name),
             page=Page(name=p_name),
             url=campaign_url,
