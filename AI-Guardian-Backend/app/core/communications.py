@@ -74,10 +74,30 @@ def create_gophish_campaign(simulation_name: str, targets: list, template_name: 
 
         # 3. Vérifier les Templates
         templates = api.templates.get()
-        if not templates:
-            print("[GOPHISH] ERREUR : Aucun 'Email Template' trouvé. Créez-en un dans Gophish !")
-            return None
-        t_name = templates[0].name
+        t_name = None
+        for t in templates:
+            if t.name == template_name:
+                t_name = t.name
+                break
+                
+        if not t_name:
+            print(f"[GOPHISH] Template '{template_name}' introuvable. Création automatique...")
+            try:
+                from gophish.models import Template
+                new_template = Template(
+                    name=template_name,
+                    subject=f"Simulation de sécurité : {template_name}",
+                    text="Ceci est une simulation de phishing par AI-Guardian. Ne cliquez pas sur les liens suspects. {{.URL}}",
+                    html="<html><body><h2>Alerte Sécurité</h2><p>Ceci est une simulation d'attaque par AI-Guardian.</p><p><a href=\"{{.URL}}\">Lien d'accès</a></p></body></html>"
+                )
+                api.templates.post(new_template)
+                t_name = template_name
+            except Exception as e:
+                print(f"[GOPHISH] ERREUR de création de template: {e}")
+                if templates:
+                    t_name = templates[0].name
+                else:
+                    return None
 
         # 4. Vérifier les Landing Pages
         pages = api.pages.get()
