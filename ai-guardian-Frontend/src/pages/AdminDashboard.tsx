@@ -166,7 +166,7 @@ export const AdminDashboard: React.FC = () => {
     let reconnectTimeout: any;
 
     const connectWS = () => {
-      import('../../services/apiClient').then(({ default: client }) => {
+      import('../services/apiClient').then(({ default: client }) => {
         const baseUrl = client.defaults.baseURL || 'http://localhost:8000';
         const wsUrl = baseUrl.replace(/^http/, 'ws') + '/ws/simulations';
         ws = new WebSocket(wsUrl);
@@ -378,7 +378,7 @@ export const AdminDashboard: React.FC = () => {
   const handleSimulateThreat = async (threat: ThreatAlert) => {
     setNotification({ message: "Création du modèle Gophish en cours...", type: 'success' });
     try {
-      const { default: client } = await import('../../services/apiClient');
+      const { default: client } = await import('../services/apiClient');
       await client.post('/simulations/threat-template', {
         name: threat.templateName,
         subject: threat.title,
