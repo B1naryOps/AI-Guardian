@@ -165,18 +165,20 @@ def create_gophish_campaign(simulation_name: str, targets: list, template_name: 
                     smtp_name = p.name
                     break
 
-        # 3. Vérifier les Templates
+        # 3. Vérifier et mettre à jour les Templates
         templates = api.templates.get()
-        t_name = None
+        target_template = None
         for t in templates:
             if t.name == template_name:
-                t_name = t.name
+                target_template = t
                 break
-                
-        if not t_name:
+        
+        # On récupère le contenu "frais" (celui qui est premium dans le code)
+        content = get_template_content(template_name)
+        
+        if not target_template:
             print(f"[GOPHISH] Template '{template_name}' introuvable. Création automatique...")
             try:
-                content = get_template_content(template_name)
                 new_template = Template(
                     name=template_name,
                     subject=content["subject"],
@@ -184,13 +186,22 @@ def create_gophish_campaign(simulation_name: str, targets: list, template_name: 
                     text="Ceci est une simulation de phishing par AI-Guardian. Ne cliquez pas sur les liens suspects. {{.URL}}"
                 )
                 api.templates.post(new_template)
-                t_name = template_name
             except Exception as e:
                 print(f"[GOPHISH] ERREUR de création de template: {e}")
                 if templates:
-                    t_name = templates[0].name
-                else:
-                    return None
+                    template_name = templates[0].name
+        else:
+            # Si le template existe déjà, on le met à jour s'il s'agit d'un template géré par AI-Guardian
+            # On vérifie si c'est l'un de nos templates prédéfinis
+            managed_templates = ["Microsoft 365 Login", "Facture Urgente", "Mise à jour RH", "Alerte Sécurité Compte", "Invitation Réunion Teams"]
+            if template_name in managed_templates:
+                print(f"[GOPHISH] Mise à jour du template '{template_name}' pour garantir le design premium...")
+                try:
+                    target_template.subject = content["subject"]
+                    target_template.html = content["html"]
+                    api.templates.put(target_template)
+                except Exception as e:
+                    print(f"[GOPHISH] Erreur lors de la mise à jour du template : {e}")
 
         # 4. Vérifier les Landing Pages
         pages = api.pages.get()
