@@ -45,79 +45,140 @@ async def send_simulation_message(email: str, simulation_name: str, channel: str
 def get_template_content(template_name: str):
     """
     Retourne le contenu HTML premium correspondant au nom du template.
+    Les designs sont optimisés pour paraître authentiques (logos CDN, typographie, structure).
     """
     templates = {
         "Microsoft 365 Login": {
-            "subject": "Alerte de sécurité de votre compte Microsoft 365",
+            "subject": "Action requise : Vérification de sécurité de votre compte Microsoft 365",
             "html": """
-<div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #334155; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px; max-width: 600px; background-color: #ffffff;">
-    <div style="display: flex; align-items: center; margin-bottom: 16px;">
-        <div style="width: 32px; height: 32px; background-color: #E81123; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; margin-right: 10px;">M</div>
-        <span style="font-weight: 600; font-size: 18px; color: #475569;">Microsoft 365</span>
+<div style="background-color: #f2f2f2; padding: 20px; font-family: 'Segoe UI', Arial, sans-serif;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #ddd;">
+        <div style="padding: 20px;">
+            <img src="https://img.icons8.com/color/48/000000/microsoft.png" alt="Microsoft" style="width: 32px; vertical-align: middle; margin-right: 10px;">
+            <span style="font-size: 18px; color: #737373; vertical-align: middle;">Microsoft</span>
+        </div>
+        <div style="padding: 0 40px 40px 40px;">
+            <h2 style="color: #262626; font-size: 24px; font-weight: 400; margin-bottom: 20px;">Vérification de sécurité</h2>
+            <p style="font-size: 14px; line-height: 20px; color: #262626;">Nous avons détecté une activité inhabituelle lors d'une connexion récente à votre compte Microsoft 365. Pour garantir la sécurité de vos données, nous avons temporairement restreint l'accès à certaines fonctionnalités.</p>
+            <p style="font-size: 14px; line-height: 20px; color: #262626;">Détails de la connexion :<br>
+            <strong>Appareil :</strong> Chrome sur Windows 10<br>
+            <strong>Lieu :</strong> Moscou, Fédération de Russie (IP: 95.161.224.12)</p>
+            <div style="margin: 30px 0;">
+                <a href="{{.URL}}" style="background-color: #0067b8; color: #ffffff; padding: 10px 20px; text-decoration: none; font-size: 14px; font-weight: 600; display: inline-block;">Reconnaître l'activité</a>
+            </div>
+            <p style="font-size: 14px; line-height: 20px; color: #262626;">Si vous n'êtes pas à l'origine de cette connexion, un tiers essaie peut-être d'accéder à votre compte. Veuillez cliquer sur le bouton ci-dessus pour sécuriser votre compte immédiatement.</p>
+            <p style="font-size: 14px; line-height: 20px; color: #262626; margin-top: 40px;">Merci,<br>L'équipe des comptes Microsoft</p>
+        </div>
+        <div style="background-color: #f2f2f2; padding: 20px; font-size: 11px; color: #737373; line-height: 15px;">
+            Ce message vous a été envoyé pour vous informer de modifications importantes apportées à votre compte et à vos services Microsoft.<br>
+            Microsoft Corporation, One Microsoft Way, Redmond, WA 98052 USA
+        </div>
     </div>
-    <p style="font-weight: bold; font-size: 16px; margin-bottom: 12px; color: #1e293b;">Alerte de sécurité de votre compte</p>
-    <p style="margin-bottom: 20px; line-height: 1.5;">Nous avons détecté une activité de connexion inhabituelle sur votre compte. Veuillez vérifier votre activité récente immédiatement pour éviter un blocage de l'accès.</p>
-    <a href="{{.URL}}" style="display: inline-block; background-color: #0078D4; color: white; padding: 12px 24px; font-weight: 600; text-decoration: none; border-radius: 4px;">Vérifier l'activité</a>
-    <p style="margin-top: 24px; font-size: 12px; color: #94a3b8; border-top: 1px solid #f1f5f9; pt: 12px;">Ceci est un message automatique de sécurité. Merci de ne pas y répondre.</p>
 </div>
             """
         },
         "Facture Urgente": {
-            "subject": "URGENT : Facture impayée #9482",
+            "subject": "Facture en attente de paiement - Action requise sous 24h",
             "html": """
-<div style="font-family: sans-serif; color: #334155; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px; max-width: 600px; background-color: #ffffff;">
-    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 20px;">
-        <span style="font-weight: bold; font-size: 18px; color: #64748b;">INVOICE #9482</span>
-        <span style="background-color: #fef2f2; color: #ef4444; font-weight: bold; padding: 4px 12px; border-radius: 4px; font-size: 12px;">URGENT</span>
+<div style="font-family: Arial, sans-serif; color: #333333; max-width: 600px; margin: 0 auto; border: 1px solid #eeeeee;">
+    <div style="background-color: #f8f9fa; padding: 30px; border-bottom: 2px solid #007bff;">
+        <table width="100%">
+            <tr>
+                <td><h1 style="margin: 0; color: #007bff; font-size: 28px;">SERVICE FACTURATION</h1></td>
+                <td align="right"><span style="color: #666; font-size: 14px;">FACTURE #INV-2024-0514</span></td>
+            </tr>
+        </table>
     </div>
-    <p style="margin-bottom: 12px;">Veuillez trouver ci-joint la facture pour les services du mois en cours.</p>
-    <p style="margin-bottom: 20px; font-weight: 600; color: #dc2626;">Le paiement est attendu sous 24h pour éviter une suspension de vos services.</p>
-    <div style="border: 1px solid #e2e8f0; padding: 16px; border-radius: 8px; display: flex; align-items: center; background-color: #f8fafc;">
-        <div style="margin-right: 12px; color: #3b82f6;">📄</div>
-        <a href="{{.URL}}" style="font-weight: 600; color: #2563eb; text-decoration: underline;">Facture_Avril.pdf</a>
+    <div style="padding: 30px;">
+        <p>Cher collaborateur,</p>
+        <p>Sauf erreur ou omission de notre part, le paiement de la facture citée en référence n'est pas parvenu à nos services. À ce jour, votre compte présente un solde débiteur de <strong>1,249.90 €</strong>.</p>
+        <div style="background-color: #fff3cd; border-left: 5px solid #ffc107; padding: 15px; margin: 20px 0;">
+            <strong>Avertissement :</strong> Sans régularisation de votre part sous 24 heures, nous serons au regret de suspendre l'accès à vos outils de travail collaboratifs.
+        </div>
+        <p>Vous pouvez consulter le détail de la facture et procéder au règlement via notre portail sécurisé :</p>
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{{.URL}}" style="background-color: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">Consulter la facture (PDF)</a>
+        </div>
+        <p style="font-size: 12px; color: #777;">Note : Pour des raisons de sécurité, vous devrez vous authentifier sur le portail de l'entreprise pour accéder à ce document.</p>
+    </div>
+    <div style="padding: 20px; background-color: #f4f4f4; text-align: center; font-size: 11px; color: #999;">
+        © 2024 Direction Financière - Tous droits réservés.
     </div>
 </div>
             """
         },
         "Mise à jour RH": {
-            "subject": "Action requise : Mise à jour de vos informations RH",
+            "subject": "URGENT : Mise à jour obligatoire de votre dossier personnel (Conformité 2024)",
             "html": """
-<div style="font-family: sans-serif; color: #334155; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px; max-width: 600px; background-color: #ffffff;">
-    <div style="display: flex; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
-        <div style="width: 40px; height: 40px; background-color: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: bold; margin-right: 12px;">RH</div>
-        <span style="font-weight: bold; font-size: 18px; color: #334155;">Ressources Humaines</span>
-    </div>
-    <p style="font-weight: bold; font-size: 16px; margin-bottom: 12px;">Mise à jour obligatoire de vos informations</p>
-    <p style="margin-bottom: 20px; line-height: 1.5;">Conformément à la nouvelle politique de l'entreprise, merci de valider vos informations de paie avant la fin de la semaine.</p>
-    <a href="{{.URL}}" style="display: inline-block; background-color: #059669; color: white; padding: 12px 24px; font-weight: 600; text-decoration: none; border-radius: 8px;">Portail RH</a>
+<div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f7f6; padding: 30px;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <tr>
+            <td style="background-color: #2c3e50; padding: 20px; text-align: center; color: #ffffff;">
+                <h2 style="margin: 0; text-transform: uppercase; letter-spacing: 2px;">Direction des Ressources Humaines</h2>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 40px;">
+                <p style="font-size: 16px; color: #34495e;">Bonjour,</p>
+                <p style="font-size: 16px; color: #34495e; line-height: 1.6;">Dans le cadre de la mise en conformité annuelle avec les nouvelles réglementations fiscales et sociales, chaque employé doit valider ses informations personnelles avant le 20 du mois en cours.</p>
+                <p style="font-size: 16px; color: #34495e; line-height: 1.6;"><strong>Attention :</strong> Le non-respect de cette procédure pourrait entraîner un retard dans le versement de votre prochain salaire ou des erreurs de calcul sur vos cotisations.</p>
+                <div style="text-align: center; margin-top: 40px;">
+                    <a href="{{.URL}}" style="background-color: #e74c3c; color: #ffffff; padding: 15px 35px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 16px; transition: background 0.3s;">Accéder au Portail RH de l'Entreprise</a>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 20px; background-color: #ecf0f1; text-align: center; font-size: 12px; color: #7f8c8d;">
+                Ce mail est généré automatiquement par le SIRH. Merci de ne pas y répondre.<br>
+                &copy; 2024 HR Global Services
+            </td>
+        </tr>
+    </table>
 </div>
             """
         },
         "Alerte Sécurité Compte": {
-            "subject": "Alerte de Sécurité : Activité suspecte détectée",
+            "subject": "Alerte de sécurité critique : Connexion non autorisée détectée",
             "html": """
-<div style="font-family: sans-serif; color: #334155; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px; max-width: 600px; background-color: #ffffff;">
-    <div style="display: flex; align-items: center; margin-bottom: 16px;">
-        <div style="font-size: 24px; margin-right: 12px;">⚠️</div>
-        <span style="font-weight: bold; font-size: 18px; color: #334155;">Alerte de Sécurité</span>
+<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #ffcccc; border-radius: 10px; overflow: hidden;">
+    <div style="background-color: #ff0000; color: white; padding: 15px; text-align: center;">
+        <h2 style="margin: 0;">ALERTE DE SÉCURITÉ CRITIQUE</h2>
     </div>
-    <p style="font-weight: bold; font-size: 16px; margin-bottom: 12px;">Activité suspecte détectée</p>
-    <p style="margin-bottom: 20px; line-height: 1.5;">Une connexion depuis une adresse IP inconnue a été bloquée. Veuillez confirmer votre identité pour sécuriser votre compte.</p>
-    <a href="{{.URL}}" style="display: inline-block; background-color: #1e293b; color: white; padding: 12px 24px; font-weight: 600; text-decoration: none; border-radius: 8px;">Sécuriser mon compte</a>
+    <div style="padding: 30px; line-height: 1.5;">
+        <p>Une tentative de connexion suspecte a été détectée sur votre compte professionnel depuis une adresse IP inconnue en dehors de votre zone géographique habituelle.</p>
+        <table style="width: 100%; background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <tr><td><strong>IP :</strong></td><td>185.244.149.23</td></tr>
+            <tr><td><strong>Navigateur :</strong></td><td>Opera 94.0 (Linux)</td></tr>
+            <tr><td><strong>Date :</strong></td><td>Aujourd'hui, 23:14:02</td></tr>
+        </table>
+        <p>Si ce n'est pas vous, votre mot de passe a probablement été compromis. Vous devez réinitialiser vos accès immédiatement pour protéger les données de l'entreprise.</p>
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{{.URL}}" style="background-color: #333; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Réinitialiser mon mot de passe maintenant</a>
+        </div>
+    </div>
 </div>
             """
         },
         "Invitation Réunion Teams": {
-            "subject": "Invitation : Point d'équipe exceptionnel",
+            "subject": "URGENT : Réunion d'urgence - Changement d'organisation",
             "html": """
-<div style="font-family: sans-serif; color: #334155; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px; max-width: 600px; background-color: #ffffff;">
-    <div style="display: flex; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
-        <div style="width: 32px; height: 32px; background-color: #5059C9; color: white; display: flex; align-items: center; justify-content: center; border-radius: 4px; font-weight: bold; font-size: 14px; margin-right: 10px;">T</div>
-        <span style="font-weight: bold; font-size: 18px; color: #334155;">Microsoft Teams</span>
+<div style="background-color: #f3f2f1; padding: 30px; font-family: 'Segoe UI', Tahoma, sans-serif;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div style="background-color: #464eb8; padding: 15px 25px; display: flex; align-items: center;">
+            <img src="https://img.icons8.com/color/48/ffffff/microsoft-teams.png" style="width: 24px; margin-right: 15px;">
+            <span style="color: white; font-weight: 600; font-size: 16px;">Microsoft Teams</span>
+        </div>
+        <div style="padding: 30px;">
+            <p style="font-size: 18px; color: #252423; font-weight: 600;">Vous avez été ajouté à une réunion urgente</p>
+            <p style="color: #616161; font-size: 14px;">Une réunion exceptionnelle a été programmée par la direction pour discuter des récents changements organisationnels.</p>
+            <div style="border-left: 4px solid #464eb8; padding-left: 15px; margin: 20px 0;">
+                <p style="margin: 0;"><strong>Sujet :</strong> Restructuration des services Q3/Q4</p>
+                <p style="margin: 5px 0 0 0;"><strong>Heure :</strong> Immédiatement</p>
+            </div>
+            <a href="{{.URL}}" style="background-color: #464eb8; color: white; padding: 10px 20px; text-decoration: none; display: inline-block; font-weight: 600; font-size: 14px; border-radius: 2px;">Cliquez ici pour rejoindre la réunion</a>
+            <p style="margin-top: 30px; font-size: 12px; color: #828282;">Besoin d'aide ? Contactez le support informatique via le portail habituel.</p>
+        </div>
     </div>
-    <p style="font-weight: bold; font-size: 16px; margin-bottom: 12px;">Vous avez été invité à une réunion</p>
-    <p style="color: #64748b; margin-bottom: 20px; line-height: 1.5;">Sujet : Point d'équipe exceptionnel<br>Heure : Aujourd'hui à 14:00</p>
-    <a href="{{.URL}}" style="display: inline-block; background-color: #5059C9; color: white; padding: 12px 24px; font-weight: 600; text-decoration: none; border-radius: 8px;">Rejoindre la réunion</a>
 </div>
             """
         }
